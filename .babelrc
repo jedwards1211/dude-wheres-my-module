@@ -1,40 +1,41 @@
 {
   "plugins": [
-    "syntax-dynamic-import",
-    "transform-class-properties",
-    "transform-export-extensions",
-    "transform-object-rest-spread"
+    "@babel/plugin-syntax-dynamic-import",
+    "@babel/plugin-proposal-class-properties",
+    "@babel/plugin-proposal-object-rest-spread",
+    "@babel/plugin-proposal-export-default-from",
+    "@babel/plugin-proposal-export-namespace-from"
   ],
   "presets": [
-    "flow"
+    "@babel/preset-flow"
   ],
   "env": {
     "test": {
       "presets": [
-        ["env", {"targets": {"node": "current"}}],
-        "flow"
+        ["@babel/preset-env", {"targets": {"node": "current"}}],
+        "@babel/preset-flow"
       ],
       "plugins": [
-        "transform-runtime"
+        "@babel/plugin-transform-runtime"
       ]
     },
     "coverage": {
       "presets": [
-        ["env", {"targets": {"node": "current"}}],
-        "flow"
+        ["@babel/preset-env", {"targets": {"node": "current"}}],
+        "@babel/preset-flow"
       ],
       "plugins": [
-        "transform-runtime",
-        "istanbul"
+        "@babel/plugin-transform-runtime",
+        "babel-plugin-istanbul"
       ]
     },
     "es5": {
       "presets": [
-        ["env", {"forceAllTransforms": true}],
-        "stage-1", "flow"
+        ["@babel/preset-env", {"forceAllTransforms": true}],
+        "@babel/preset-stage-1", "@babel/preset-flow"
       ],
       "plugins": [
-        "transform-runtime"
+        "@babel/plugin-transform-runtime"
       ]
     },
   }
