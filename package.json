@@ -46,7 +46,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jcoreio/dude-wheres-my-module.git"
+    "url": "https://github.com/jedwards1211/dude-wheres-my-module.git"
   },
   "keywords": [
     "es2015"
@@ -54,9 +54,9 @@
   "author": "Andy Edwards",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jcoreio/dude-wheres-my-module/issues"
+    "url": "https://github.com/jedwards1211/dude-wheres-my-module/issues"
   },
-  "homepage": "https://github.com/jcoreio/dude-wheres-my-module#readme",
+  "homepage": "https://github.com/jedwards1211/dude-wheres-my-module#readme",
   "devDependencies": {
     "@babel/cli": "^7.1.5",
     "@babel/core": "^7.1.5",
