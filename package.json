@@ -29,7 +29,7 @@
     "travis-deploy-once": "travis-deploy-once"
   },
   "config": {
-    "mocha": "-r babel-register ./test/**/*.js",
+    "mocha": "-r @babel/register ./test/**/*.js",
     "commitizen": {
       "path": "cz-conventional-changelog"
     }
@@ -39,7 +39,7 @@
       "src/**/*.js"
     ],
     "require": [
-      "babel-register"
+      "@babel/register"
     ],
     "sourceMap": false,
     "instrument": false
@@ -88,6 +88,7 @@
     "flow-bin": "^0.85.0",
     "flow-copy-source": "^1.2.1",
     "flow-watch": "^1.1.0",
+    "glob-gitignore": "^1.0.11",
     "husky": "^0.14.3",
     "istanbul": "^0.4.5",
     "mocha": "^5.2.0",
@@ -97,5 +98,9 @@
     "rimraf": "^2.6.0",
     "semantic-release": "^15.1.4",
     "travis-deploy-once": "^4.3.1"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.1.5",
+    "fs-extra": "^7.0.1"
   }
 }

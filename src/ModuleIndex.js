@@ -68,15 +68,15 @@ export class ModuleInfo {
     this.file = file
   }
 
-  addOwnImport(exportInfo: ExportInfo) {
+  addOwnImport(local: string, exportInfo: ExportInfo) {
     const { file, identifier } = exportInfo
-    this.ownImports.set(identifier, exportInfo)
+    this.ownImports.set(local, exportInfo)
     let ownImportsByModule = this.ownImportsByModule.get(file)
     if (!ownImportsByModule) {
       ownImportsByModule = new Map()
       this.ownImportsByModule.set(file, ownImportsByModule)
     }
-    ownImportsByModule.set(identifier, exportInfo)
+    ownImportsByModule.set(local, exportInfo)
   }
 
   addImportingModule(file: string, identifier: IdentifierName) {
@@ -102,6 +102,11 @@ export class ModuleInfo {
 
 type Options = {
   projectRoot: string,
+}
+
+export type ExportsQuery = {
+  identifier: string,
+  kind?: ?Kind,
 }
 
 export default class ModuleIndex {
@@ -147,18 +152,45 @@ export default class ModuleIndex {
     moduleMap.set(file, exportInfo)
   }
 
-  getExports({
-    identifier,
-  }: {
-    identifier: IdentifierName,
-  }): Array<ExportInfo> {
+  getExports({ identifier, kind }: ExportsQuery): Array<ExportInfo> {
     const moduleMap = this.identifiers.get(identifier) || []
-    return sortBy([...moduleMap.values()], ({ file }: ExportInfo) => {
+    let result = sortBy([...moduleMap.values()], ({ file }: ExportInfo) => {
       const moduleInfo = this.getModule(file)
       const importingModules = moduleInfo.importingModulesByIdentifier.get(
         identifier
       )
       return importingModules ? -importingModules.size : 0
+    })
+    if (kind) result = result.filter(e => e.kind === kind)
+    return result
+  }
+
+  getSuggestedImports({
+    file,
+    ...query
+  }: ExportsQuery & {
+    file: string,
+  }): Array<string> {
+    const { identifier } = query
+    return this.getExports(query).map((exportInfo: ExportInfo) => {
+      let request = exportInfo.file.replace(/(\/index)?\.[^/]+$/, '')
+      if (request.startsWith(this.nodeModulesDir)) {
+        request = path.relative(this.nodeModulesDir, request)
+      } else {
+        request = path.relative(path.dirname(file), request)
+      }
+      switch (exportInfo.identifier) {
+        case NAMESPACE:
+          return `import * as ${identifier} from "${request}"`
+        case 'default':
+          return `import ${identifier} from "${request}"`
+        default:
+          return `import { ${exportInfo.kind === 'type' ? 'type ' : ''}${String(
+            exportInfo.identifier
+          )}${
+            identifier === exportInfo.identifier ? '' : ` as ${identifier}`
+          } } from "${request}"`
+      }
     })
   }
 
@@ -209,6 +241,7 @@ export default class ModuleIndex {
       sourceFile = require.resolve(source.value, {
         paths: [path.dirname(_module.file)],
       })
+      if (!path.isAbsolute(sourceFile)) return
     } catch (err) {
       console.error(err.stack) // eslint-disable-line no-console
       return
@@ -234,10 +267,12 @@ export default class ModuleIndex {
         identifier,
         kind,
       }
-      _module.addOwnImport(exportInfo)
+      _module.addOwnImport(specifier.local.name, exportInfo)
 
       const importedModule = this.getModule(sourceFile)
       importedModule.addImportingModule(_module.file, identifier)
+
+      this.addExport(exportInfo)
     }
   }
   _addExportNamedDeclaration(
