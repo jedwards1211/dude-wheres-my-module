@@ -11,7 +11,7 @@ import EventEmitter from '@jcoreio/typed-event-emitter'
 import emitted from 'p-event'
 import throttle from 'lodash/throttle'
 
-type Progress = { completed: number, total: number }
+export type Progress = { completed: number, total: number }
 
 type Events = {
   ready: [],
@@ -82,20 +82,20 @@ export default class WatchingIndexer extends EventEmitter<Events> {
       if (this.isReady()) this.emit('ready')
     })
     this.watcher.on('add', (file: string) => {
-      console.error('added:', file) // eslint-disable-line no-console
+      console.error('[dwmm] added:', file) // eslint-disable-line no-console
       this.processFile(path.resolve(projectRoot, file))
     })
     this.watcher.on(
       'change',
       async (file: string): Promise<void> => {
-        console.error('changed:', file) // eslint-disable-line no-console
+        console.error('[dwmm] changed:', file) // eslint-disable-line no-console
         this.processFile(path.resolve(projectRoot, file))
       }
     )
     this.watcher.on(
       'unlink',
       async (file: string): Promise<void> => {
-        console.error('unlinked:', file) // eslint-disable-line no-console
+        console.error('[dwmm] unlinked:', file) // eslint-disable-line no-console
         this.allFiles.delete(file)
         this.pendingFiles.delete(file)
         file = path.resolve(projectRoot, file)

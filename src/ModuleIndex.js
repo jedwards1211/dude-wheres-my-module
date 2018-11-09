@@ -297,7 +297,7 @@ export default class ModuleIndex {
       })
       if (!path.isAbsolute(sourceFile)) return
     } catch (err) {
-      console.error(err.stack) // eslint-disable-line no-console
+      console.error('[dwmm] ERROR:', err.message, `(in file ${_module.file})`) // eslint-disable-line no-console
       return
     }
     for (let specifier of specifiers) {
