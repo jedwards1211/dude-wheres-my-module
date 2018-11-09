@@ -117,6 +117,10 @@ export type ExportsQuery = {
 export type SuggestedImportsQuery = ExportsQuery & {
   file: string,
 }
+export type SuggestedImportResult = {
+  ast: ImportDeclaration,
+  code: string,
+}
 
 export default class ModuleIndex {
   projectRoot: string
@@ -178,7 +182,7 @@ export default class ModuleIndex {
   getSuggestedImports({
     file,
     ...query
-  }: SuggestedImportsQuery): Array<string> {
+  }: SuggestedImportsQuery): Array<SuggestedImportResult> {
     const { identifier } = query
     return this.getExports(query).map((exportInfo: ExportInfo) => {
       let request = exportInfo.file.replace(/(\/index)?\.[^/]+$/, '')
@@ -190,15 +194,59 @@ export default class ModuleIndex {
       }
       switch (exportInfo.identifier) {
         case NAMESPACE:
-          return `import * as ${identifier} from "${request}"`
+          return {
+            code: `import * as ${identifier} from "${request}"`,
+            ast: {
+              type: 'ImportDeclaration',
+              specifiers: [
+                {
+                  type: 'ImportNamespaceSpecifier',
+                  local: { type: 'Identifier', name: identifier },
+                },
+              ],
+              importKind: 'value',
+              source: { type: 'StringLiteral', value: request },
+            },
+          }
         case 'default':
-          return `import ${identifier} from "${request}"`
+          return {
+            code: `import ${identifier} from "${request}"`,
+            ast: {
+              type: 'ImportDeclaration',
+              specifiers: [
+                {
+                  type: 'ImportDefaultSpecifier',
+                  local: { type: 'Identifier', name: identifier },
+                },
+              ],
+              importKind: 'value',
+              source: { type: 'StringLiteral', value: request },
+            },
+          }
         default:
-          return `import { ${exportInfo.kind === 'type' ? 'type ' : ''}${String(
-            exportInfo.identifier
-          )}${
-            identifier === exportInfo.identifier ? '' : ` as ${identifier}`
-          } } from "${request}"`
+          return {
+            code: `import { ${
+              exportInfo.kind === 'type' ? 'type ' : ''
+            }${String(exportInfo.identifier)}${
+              identifier === exportInfo.identifier ? '' : ` as ${identifier}`
+            } } from "${request}"`,
+            ast: {
+              type: 'ImportDeclaration',
+              specifiers: [
+                {
+                  type: 'ImportSpecifier',
+                  imported: {
+                    type: 'Identifier',
+                    name: String(exportInfo.identifier),
+                  },
+                  local: { type: 'Identifier', name: identifier },
+                  importKind: exportInfo.kind || 'value',
+                },
+              ],
+              importKind: 'value',
+              source: { type: 'StringLiteral', value: request },
+            },
+          }
       }
     })
   }

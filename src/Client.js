@@ -1,6 +1,9 @@
 // @flow
 
-import type { SuggestedImportsQuery } from './ModuleIndex'
+import type {
+  SuggestedImportsQuery,
+  SuggestedImportResult,
+} from './ModuleIndex'
 import type { Progress } from './WatchingIndexer'
 import net from 'net'
 import tempFiles from './tempFiles'
@@ -118,7 +121,7 @@ export default class Client extends EventEmitter<Events> {
 
   async getSuggestedImports(
     query: SuggestedImportsQuery
-  ): Promise<Array<string>> {
+  ): Promise<Array<SuggestedImportResult>> {
     const { getSuggestedImports } = await this.request({
       getSuggestedImports: query,
     })
