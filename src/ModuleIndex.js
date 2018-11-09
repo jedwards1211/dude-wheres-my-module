@@ -147,7 +147,7 @@ export default class ModuleIndex {
     return info
   }
 
-  addExport(exportInfo: ExportInfo) {
+  addExport(local: string, exportInfo: ExportInfo) {
     const { file } = exportInfo
     const moduleInfo = this.getModule(file)
     moduleInfo.addExport(exportInfo)
@@ -161,6 +161,15 @@ export default class ModuleIndex {
     if (!moduleMap) {
       moduleMap = new Map()
       this.identifiers.set(identifier, moduleMap)
+    }
+    moduleMap.set(file, exportInfo)
+
+    if (local === exportInfo.identifier || local === identifier) return
+
+    moduleMap = this.identifiers.get(local)
+    if (!moduleMap) {
+      moduleMap = new Map()
+      this.identifiers.set(local, moduleMap)
     }
     moduleMap.set(file, exportInfo)
   }
@@ -387,7 +396,7 @@ export default class ModuleIndex {
       const importedModule = this.getModule(sourceFile)
       importedModule.addImportingModule(_module.file, identifier)
 
-      this.addExport(exportInfo)
+      this.addExport(specifier.local.name, exportInfo)
     }
   }
   _addExportNamedDeclaration(
@@ -407,7 +416,7 @@ export default class ModuleIndex {
         default:
           continue
       }
-      this.addExport({
+      this.addExport(identifier, {
         file: _module.file,
         identifier,
         kind,
@@ -434,7 +443,7 @@ export default class ModuleIndex {
           break
       }
       if (identifier) {
-        this.addExport({
+        this.addExport(identifier, {
           file: _module.file,
           identifier,
           kind,
@@ -446,7 +455,7 @@ export default class ModuleIndex {
     _module: ModuleInfo,
     declaration: ExportDefaultDeclaration
   ) {
-    this.addExport({
+    this.addExport('default', {
       file: _module.file,
       identifier: 'default',
       kind: 'value',
