@@ -6,6 +6,9 @@
   "module": "es/index.js",
   "modules.root": "es",
   "sideEffects": false,
+  "bin": {
+    "dwmm": "cli.js"
+  },
   "scripts": {
     "lint": "eslint src test --cache",
     "lint:fix": "eslint --fix src test --cache",

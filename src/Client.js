@@ -40,8 +40,12 @@ export default class Client extends EventEmitter<Events> {
     this.outstream = new JSONStream.stringify()
   }
 
-  async start(): Promise<net.Socket> {
-    const actuallyStart = async (): Promise<net.Socket> => {
+  async connect({
+    startServer,
+  }: {
+    startServer?: ?boolean,
+  } = {}): Promise<net.Socket> {
+    const actuallyConnect = async (): Promise<net.Socket> => {
       const files = tempFiles(this.projectRoot)
 
       const client = await new Promise(
@@ -56,7 +60,11 @@ export default class Client extends EventEmitter<Events> {
             client.removeListener('error', reject)
             resolve(client)
           }
-          const handleInitialError = async (): Promise<void> => {
+          const handleInitialError = async (error: Error): Promise<void> => {
+            if (!startServer) {
+              reject(error)
+              return
+            }
             spawn('node', [require.resolve('./Server'), this.projectRoot], {
               detached: true,
             })
@@ -92,12 +100,12 @@ export default class Client extends EventEmitter<Events> {
       return client
     }
 
-    return await (this.client || (this.client = actuallyStart()))
+    return await (this.client || (this.client = actuallyConnect()))
   }
 
   async request(message: $Diff<Message, { seq: number }>): Promise<any> {
     const seq = this.seq++
-    const client = await this.start()
+    const client = await this.connect({ startServer: true })
     return await new Promise(
       (resolve: (result: any) => any, reject: (error: Error) => any) => {
         const handleResult = (result: any) => {
@@ -129,8 +137,8 @@ export default class Client extends EventEmitter<Events> {
   }
 
   async stopServer(): Promise<void> {
-    if (!this.client) return
     try {
+      await this.connect()
       // $FlowFixMe
       await promisify(cb => this.outstream.end({ stop: true }, cb))()
     } finally {
@@ -139,8 +147,8 @@ export default class Client extends EventEmitter<Events> {
   }
 
   async killServer(): Promise<void> {
-    if (!this.client) return
     try {
+      await this.connect()
       // $FlowFixMe
       await promisify(cb => this.outstream.end({ kill: true }, cb))()
     } finally {

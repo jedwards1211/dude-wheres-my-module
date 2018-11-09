@@ -67,8 +67,8 @@ async function cleanup(): Promise<void> {
   ])
 }
 
-function handleSignal() {
-  cleanup()
+async function handleSignal(): Promise<any> {
+  await cleanup()
   process.exit(1)
 }
 
