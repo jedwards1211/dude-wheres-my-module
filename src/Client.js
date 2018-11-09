@@ -53,13 +53,9 @@ export default class Client extends EventEmitter<Events> {
             resolve(client)
           }
           const handleInitialError = async (): Promise<void> => {
-            spawn(
-              'babel-node',
-              [require.resolve('./Server'), this.projectRoot],
-              {
-                detached: true,
-              }
-            )
+            spawn('node', [require.resolve('./Server'), this.projectRoot], {
+              detached: true,
+            })
             await delay(3000)
             client = net.createConnection(files.sock, handleConnect)
             client.on('error', reject)
@@ -102,7 +98,8 @@ export default class Client extends EventEmitter<Events> {
       (resolve: (result: any) => any, reject: (error: Error) => any) => {
         const handleResult = (result: any) => {
           client.removeListener('error', handleError)
-          resolve(result)
+          if (result.error) reject(result.error)
+          else resolve(result)
         }
         const handleError = (error: Error) => {
           client.removeListener('error', handleError)

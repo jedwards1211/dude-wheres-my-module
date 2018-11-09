@@ -1,11 +1,11 @@
-import Client from '../src/Client'
+import Client from '../Client'
 import path from 'path'
 
 const client = new Client(path.resolve(__dirname, '..'))
 client
   .getSuggestedImports({
     file: __filename,
-    identifier: 'Kind',
+    identifier: 'FlowParser',
   })
   .then(
     async result => {

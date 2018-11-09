@@ -9,6 +9,7 @@ export default function tempFiles(
   lock: string,
   sock: string,
   pids: string,
+  log: string,
 } {
   const tmp = '/tmp'
   const tempDir = path.join(tmp, 'dude-wheres-my-module')
@@ -18,5 +19,6 @@ export default function tempFiles(
     lock: `${tempPrefix}.lock`,
     sock: `${tempPrefix}.sock`,
     pids: `${tempPrefix}.pids`,
+    log: `${tempPrefix}.log`,
   }
 }

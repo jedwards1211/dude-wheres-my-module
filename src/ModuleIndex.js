@@ -163,6 +163,7 @@ export default class ModuleIndex {
 
   getExports({ identifier, kind }: ExportsQuery): Array<ExportInfo> {
     const moduleMap = this.identifiers.get(identifier) || []
+    if (!moduleMap) return []
     let result = sortBy([...moduleMap.values()], ({ file }: ExportInfo) => {
       const moduleInfo = this.getModule(file)
       const importingModules = moduleInfo.importingModulesByIdentifier.get(

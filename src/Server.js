@@ -1,5 +1,6 @@
 // @flow
 
+import '@babel/polyfill'
 import ModuleIndex from './ModuleIndex'
 import WatchingIndexer from './WatchingIndexer'
 import FlowParser from './parsers/flow'
@@ -41,6 +42,8 @@ try {
 
 fs.writeFileSync(files.pids, `${process.pid}\tserver`, 'utf8')
 
+const log = fs.createWriteStream(files.log, 'utf8')
+
 const index = new ModuleIndex({ projectRoot })
 const indexer = new WatchingIndexer({
   projectRoot,
@@ -56,14 +59,20 @@ indexer.start()
 
 async function cleanup(): Promise<void> {
   await Promise.all([
+    promisify(cb => log.close(cb)),
     fs.remove(files.lock),
     fs.remove(files.sock),
     fs.remove(files.pids),
   ])
 }
 
-process.on('SIGINT', cleanup)
-process.on('SIGTERM', cleanup)
+function handleSignal() {
+  cleanup()
+  process.exit(1)
+}
+
+process.on('SIGINT', handleSignal)
+process.on('SIGTERM', handleSignal)
 
 server.on('connection', (sock: net.Socket) => {
   const instream = JSONStream.parse('*')
@@ -82,9 +91,18 @@ server.on('connection', (sock: net.Socket) => {
     }
     if (getSuggestedImports) {
       await indexer.waitUntilReady()
-      const message = {
-        seq,
-        getSuggestedImports: index.getSuggestedImports(getSuggestedImports),
+      let message
+      try {
+        message = {
+          seq,
+          getSuggestedImports: index.getSuggestedImports(getSuggestedImports),
+        }
+      } catch (error) {
+        log.write(error.stack)
+        message = {
+          seq,
+          error: error.stack,
+        }
       }
       outstream.write(message)
     }
