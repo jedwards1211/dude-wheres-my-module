@@ -32,7 +32,7 @@ type ExportInfo = $ReadOnly<{
    */
   kind: Kind,
   /**
-   * If this is specified as preferred in user configuration files,
+   * If this is specified asepreferred in user configuration files,
    * the value of this field should be the index in the list of preferred
    * imports.
    */
@@ -68,8 +68,14 @@ export class ModuleInfo {
     this.file = file
   }
 
+  isDangling(): boolean {
+    return (
+      !this.ownImports.size && !this.importingModules.size && !this.exports.size
+    )
+  }
+
   addOwnImport(local: string, exportInfo: ExportInfo) {
-    const { file, identifier } = exportInfo
+    const { file } = exportInfo
     this.ownImports.set(local, exportInfo)
     let ownImportsByModule = this.ownImportsByModule.get(file)
     if (!ownImportsByModule) {
@@ -107,6 +113,9 @@ type Options = {
 export type ExportsQuery = {
   identifier: string,
   kind?: ?Kind,
+}
+export type SuggestedImportsQuery = ExportsQuery & {
+  file: string,
 }
 
 export default class ModuleIndex {
@@ -168,9 +177,7 @@ export default class ModuleIndex {
   getSuggestedImports({
     file,
     ...query
-  }: ExportsQuery & {
-    file: string,
-  }): Array<string> {
+  }: SuggestedImportsQuery): Array<string> {
     const { identifier } = query
     return this.getExports(query).map((exportInfo: ExportInfo) => {
       let request = exportInfo.file.replace(/(\/index)?\.[^/]+$/, '')
@@ -194,8 +201,55 @@ export default class ModuleIndex {
     })
   }
 
-  removeModule(file: string) {
-    // TODO
+  /**
+   * Removes all of the imports and exports declared by the given file from the
+   * index.  However, if other modules import from the given file, those imports
+   * will remain in the index.
+   */
+  undeclareModule(file: string) {
+    const moduleInfo = this.getModule(file)
+
+    for (let exportInfo of moduleInfo.exports.values()) {
+      const moduleMap = this.identifiers.get(exportInfo.identifier)
+      if (moduleMap) {
+        moduleMap.delete(file)
+        if (!moduleMap.size) this.identifiers.delete(exportInfo.identifier)
+      }
+    }
+
+    for (let [
+      sourceFile,
+      identifierMap,
+    ] of moduleInfo.ownImportsByModule.entries()) {
+      const sourceModuleInfo = this.getModule(sourceFile)
+      sourceModuleInfo.importingModules.delete(file)
+      for (let identifier of identifierMap.keys()) {
+        const moduleMap = sourceModuleInfo.importingModulesByIdentifier.get(
+          identifier
+        )
+        if (moduleMap) {
+          moduleMap.delete(file)
+          if (!moduleMap.size) {
+            sourceModuleInfo.importingModulesByIdentifier.delete(identifier)
+            const rootModuleMap = this.identifiers.get(identifier)
+            if (rootModuleMap) {
+              rootModuleMap.delete(sourceFile)
+              if (!rootModuleMap.size) {
+                this.identifiers.delete(identifier)
+              }
+            }
+          }
+        }
+      }
+      if (sourceModuleInfo.isDangling()) {
+        this.modules.delete(sourceFile)
+      }
+    }
+
+    moduleInfo.exports.clear()
+    moduleInfo.ownImports.clear()
+    moduleInfo.ownImportsByModule.clear()
+    if (moduleInfo.isDangling()) this.modules.delete(file)
   }
 
   declareModule(
@@ -207,7 +261,7 @@ export default class ModuleIndex {
       | ExportAllDeclaration
     >
   ) {
-    this.removeModule(file)
+    this.undeclareModule(file)
 
     const _module = this.getModule(file)
 

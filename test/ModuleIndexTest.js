@@ -1,7 +1,7 @@
 // @flow
 
 import ModuleIndex from '../src/ModuleIndex'
-import BabelParser from '../src/parsers/babel'
+import FlowParser from '../src/parsers/flow'
 import path from 'path'
 import { glob } from 'glob-gitignore'
 import { expect } from 'chai'
@@ -14,7 +14,7 @@ describe('ModuleIndex', function() {
       const index = new ModuleIndex({
         projectRoot,
       })
-      const parser = new BabelParser()
+      const parser = new FlowParser()
 
       for (let file of await glob('src/**/*.js', { cwd: projectRoot })) {
         file = path.resolve(projectRoot, file)

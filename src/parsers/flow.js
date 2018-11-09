@@ -1,6 +1,5 @@
 // @flow
 
-import path from 'path'
 import type {
   ImportDeclaration,
   ExportNamedDeclaration,
@@ -8,9 +7,10 @@ import type {
   ExportAllDeclaration,
 } from '../ASTTypes'
 import { readFile } from 'fs-extra'
+import { parse } from 'flow-parser'
 import type { Parser } from './Parser'
 
-export default class BabelParser implements Parser {
+export default class FlowParser implements Parser {
   async parse(
     file: string
   ): Promise<
@@ -21,30 +21,16 @@ export default class BabelParser implements Parser {
       | ExportAllDeclaration
     >
   > {
-    let parserPath = '@babel/core'
-    if (file) {
-      try {
-        // $FlowFixMe
-        parserPath = require.resolve('@babel/core', {
-          paths: [path.dirname(file)],
-        })
-      } catch (err) {
-        try {
-          // $FlowFixMe
-          parserPath = require.resolve('babel-core', {
-            paths: [path.dirname(file)],
-          })
-        } catch (err) {
-          // ignore
-        }
-      }
-    }
-
     const code = await readFile(file, 'utf8')
 
-    // $FlowFixMe
-    const { parseAsync } = require(parserPath)
-    const ast = await parseAsync(code, { filename: file, ast: true })
+    const ast = parse(code, {
+      esproposal_decorators: true,
+      esproposal_class_instance_fields: true,
+      esproposal_class_static_fields: true,
+      esproposal_export_star_as: true,
+      esproposal_optional_chaining: true,
+      esproposal_nullish_coalescing: true,
+    })
 
     function* declarations(): Iterable<
       | ImportDeclaration

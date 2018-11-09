@@ -7,6 +7,7 @@
     "@babel/plugin-proposal-export-namespace-from"
   ],
   "presets": [
+    ["@babel/preset-env", {"targets": {"node": "current"}}],
     "@babel/preset-flow"
   ],
   "env": {
@@ -31,8 +32,7 @@
     },
     "es5": {
       "presets": [
-        ["@babel/preset-env", {"forceAllTransforms": true}],
-        "@babel/preset-stage-1", "@babel/preset-flow"
+        ["@babel/preset-env", {"forceAllTransforms": true}]
       ],
       "plugins": [
         "@babel/plugin-transform-runtime"
