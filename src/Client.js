@@ -10,6 +10,7 @@ import delay from 'delay'
 import stream from 'stream'
 import JSONStream from 'JSONStream'
 import EventEmitter from '@jcoreio/typed-event-emitter'
+import findRoot from 'find-root'
 
 export type Message = {
   seq: number,
@@ -31,7 +32,7 @@ export default class Client extends EventEmitter<Events> {
 
   constructor(projectRoot: string) {
     super()
-    this.projectRoot = projectRoot
+    this.projectRoot = findRoot(projectRoot)
     this.instream = new JSONStream.parse('*')
     this.outstream = new JSONStream.stringify()
   }

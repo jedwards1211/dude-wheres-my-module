@@ -12,6 +12,7 @@ import lockFile from 'lockfile'
 import net from 'net'
 import tempFiles from './tempFiles'
 import { promisify } from 'util'
+import findRoot from 'find-root'
 
 export type Message = {
   seq: number,
@@ -20,11 +21,11 @@ export type Message = {
   kill?: boolean,
 }
 
-const projectRoot = process.argv[2]
-if (!projectRoot) {
+if (!process.argv[2]) {
   console.error(`Usage: ${process.argv[0]} ${process.argv[1]} <project dir>`) // eslint-disable-line no-console
   process.exit(1)
 }
+const projectRoot = findRoot(process.argv[2])
 if (!fs.pathExistsSync(projectRoot)) {
   console.error(`Project dir doesn't exist: ${projectRoot}`) // eslint-disable-line no-console
   process.exit(1)
