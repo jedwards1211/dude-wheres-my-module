@@ -188,6 +188,17 @@ export default class ModuleIndex {
       let request = exportInfo.file.replace(/(\/index)?\.[^/]+$/, '')
       if (request.startsWith(this.nodeModulesDir)) {
         request = path.relative(this.nodeModulesDir, request)
+        const match = /^(@[^/]+\/)?[^/]+/.exec(request)
+        const pkg = match && match[0]
+        if (
+          pkg &&
+          // $FlowFixMe
+          require.resolve(pkg, {
+            paths: [this.projectRoot],
+          }) === exportInfo.file
+        ) {
+          request = pkg
+        }
       } else {
         request = path.relative(path.dirname(file), request)
         if (!request.startsWith('.')) request = `./${request}`
