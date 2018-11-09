@@ -3,6 +3,7 @@
 import Client from './client'
 import findRoot from 'find-root'
 import path from 'path'
+import { eraseStartLine, cursorLeft } from 'ansi-escapes'
 
 const projectRoot = findRoot(process.cwd())
 
@@ -25,10 +26,22 @@ async function run(): Promise<void> {
           ? path.resolve(projectRoot, process.argv[argIndex + 1])
           : path.join(projectRoot, 'index.js')
 
+      client.on('progress', ({ completed, total }) => {
+        process.stdout.write(
+          `${eraseStartLine}${cursorLeft}Server is starting... ${completed}/${total} (${Math.floor(
+            (completed * 100) / total
+          )}%)`
+        )
+      })
+      client.on('ready', () =>
+        process.stdout.write(eraseStartLine + cursorLeft)
+      )
+
       const suggestions = await client.getSuggestedImports({
         identifier: process.argv[3],
         file,
       })
+      process.stdout.write(eraseStartLine + cursorLeft)
       for (let { code } of suggestions) {
         console.log(code) // eslint-disable-line no-console
       }

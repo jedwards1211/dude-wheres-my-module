@@ -106,7 +106,7 @@ export default class WatchingIndexer extends EventEmitter<Events> {
 
   emitProgress = throttle(() => {
     this.emit('progress', this.getProgress())
-  }, 1000)
+  }, 50)
 
   stop() {
     if (!this.watcher) return
