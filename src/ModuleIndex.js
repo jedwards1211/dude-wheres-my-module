@@ -186,6 +186,7 @@ export default class ModuleIndex {
         request = path.relative(this.nodeModulesDir, request)
       } else {
         request = path.relative(path.dirname(file), request)
+        if (!request.startsWith('.')) request = `./${request}`
       }
       switch (exportInfo.identifier) {
         case NAMESPACE:
