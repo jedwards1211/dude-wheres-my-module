@@ -9,6 +9,23 @@ const projectRoot = findRoot(process.cwd())
 
 const client = new Client(projectRoot)
 
+async function withStatus<T>(fn: () => Promise<T>): Promise<T> {
+  const listener = ({ completed, total }) => {
+    process.stdout.write(
+      `${eraseStartLine}${cursorLeft}Server is starting... ${completed}/${total} (${Math.floor(
+        (completed * 100) / total
+      )}%)`
+    )
+  }
+  client.on('progress', listener)
+  try {
+    return await fn()
+  } finally {
+    client.removeListener('progress', listener)
+    process.stdout.write(eraseStartLine + cursorLeft)
+  }
+}
+
 async function run(): Promise<void> {
   switch (process.argv[2]) {
     case 'stop': {
@@ -26,22 +43,12 @@ async function run(): Promise<void> {
           ? path.resolve(projectRoot, process.argv[argIndex + 1])
           : path.join(projectRoot, 'index.js')
 
-      client.on('progress', ({ completed, total }) => {
-        process.stdout.write(
-          `${eraseStartLine}${cursorLeft}Server is starting... ${completed}/${total} (${Math.floor(
-            (completed * 100) / total
-          )}%)`
-        )
-      })
-      client.on('ready', () =>
-        process.stdout.write(eraseStartLine + cursorLeft)
+      const suggestions = await withStatus(() =>
+        client.getSuggestedImports({
+          identifier: process.argv[3],
+          file,
+        })
       )
-
-      const suggestions = await client.getSuggestedImports({
-        identifier: process.argv[3],
-        file,
-      })
-      process.stdout.write(eraseStartLine + cursorLeft)
       for (let { code } of suggestions) {
         console.log(code) // eslint-disable-line no-console
       }
