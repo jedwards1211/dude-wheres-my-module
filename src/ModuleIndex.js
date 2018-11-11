@@ -9,6 +9,13 @@ import type {
   ExportNamedDeclaration,
   ExportDefaultDeclaration,
   ExportAllDeclaration,
+  DeclareModule,
+  DeclareExportDeclaration,
+  ClassDeclaration,
+  FunctionDeclaration,
+  VariableDeclaration,
+  InterfaceDeclaration,
+  TypeAlias,
 } from './ASTTypes'
 
 export opaque type IdentifierName = string | typeof NAMESPACE
@@ -212,10 +219,13 @@ export default class ModuleIndex {
         request = path.relative(path.dirname(file), request)
         if (!request.startsWith('.')) request = `./${request}`
       }
+      const kind = exportInfo.kind || 'value'
       switch (exportInfo.identifier) {
         case NAMESPACE:
           return {
-            code: `import * as ${identifier} from "${request}"`,
+            code: `import ${
+              kind === 'type' ? 'type ' : ''
+            }* as ${identifier} from "${request}"`,
             ast: {
               type: 'ImportDeclaration',
               specifiers: [
@@ -224,13 +234,15 @@ export default class ModuleIndex {
                   local: { type: 'Identifier', name: identifier },
                 },
               ],
-              importKind: 'value',
+              importKind: kind,
               source: { type: 'StringLiteral', value: request },
             },
           }
         case 'default':
           return {
-            code: `import ${identifier} from "${request}"`,
+            code: `import ${
+              kind === 'type' ? 'type ' : ''
+            }${identifier} from "${request}"`,
             ast: {
               type: 'ImportDeclaration',
               specifiers: [
@@ -239,15 +251,15 @@ export default class ModuleIndex {
                   local: { type: 'Identifier', name: identifier },
                 },
               ],
-              importKind: 'value',
+              importKind: kind,
               source: { type: 'StringLiteral', value: request },
             },
           }
         default:
           return {
-            code: `import { ${
-              exportInfo.kind === 'type' ? 'type ' : ''
-            }${String(exportInfo.identifier)}${
+            code: `import { ${kind === 'type' ? 'type ' : ''}${String(
+              exportInfo.identifier
+            )}${
               identifier === exportInfo.identifier ? '' : ` as ${identifier}`
             } } from "${request}"`,
             ast: {
@@ -260,7 +272,7 @@ export default class ModuleIndex {
                     name: String(exportInfo.identifier),
                   },
                   local: { type: 'Identifier', name: identifier },
-                  importKind: exportInfo.kind || 'value',
+                  importKind: kind,
                 },
               ],
               importKind: 'value',
@@ -329,6 +341,7 @@ export default class ModuleIndex {
       | ExportNamedDeclaration
       | ExportDefaultDeclaration
       | ExportAllDeclaration
+      | DeclareModule
     >
   ) {
     this.undeclareModule(file)
@@ -351,6 +364,10 @@ export default class ModuleIndex {
         }
         case 'ExportAllDeclaration': {
           this._addExportAllDeclaration(_module, declaration)
+          break
+        }
+        case 'DeclareModule': {
+          this._addDeclareModule(declaration)
           break
         }
       }
@@ -466,6 +483,115 @@ export default class ModuleIndex {
     declaration: ExportAllDeclaration
   ) {
     // TODO
+  }
+
+  _addDeclareModule(declareModule: DeclareModule) {
+    let file: string
+    try {
+      // $FlowFixMe
+      file = require.resolve(declareModule.id.value, {
+        paths: [this.projectRoot],
+      })
+    } catch (error) {
+      return
+    }
+    const convertedDeclarations: Array<
+      | ImportDeclaration
+      | ExportNamedDeclaration
+      | ExportDefaultDeclaration
+      | ExportAllDeclaration
+      | DeclareModule
+    > = []
+    for (let statement of declareModule.body.body) {
+      if (statement.type === 'DeclareExportDeclaration') {
+        const {
+          declaration,
+          specifiers,
+          source,
+          default: isDefault,
+        } = ((statement: any): DeclareExportDeclaration)
+        if (declaration) {
+          let convertedDeclaration:
+            | ClassDeclaration
+            | FunctionDeclaration
+            | VariableDeclaration
+            | InterfaceDeclaration
+            | TypeAlias
+          switch (declaration.type) {
+            case 'DeclareClass': {
+              convertedDeclaration = {
+                ...(declaration: any),
+                type: 'ClassDeclaration',
+              }
+              break
+            }
+            case 'DeclareFunction': {
+              convertedDeclaration = {
+                ...(declaration: any),
+                type: 'FunctionDeclaration',
+              }
+              break
+            }
+            case 'DeclareVariable': {
+              convertedDeclaration = {
+                type: 'VariableDeclaration',
+                declarations: [
+                  {
+                    ...(declaration: any),
+                    type: 'VariableDeclarator',
+                  },
+                ],
+                kind: 'var',
+              }
+              break
+            }
+            case 'InterfaceDeclaration':
+            case 'TypeAlias': {
+              convertedDeclaration = declaration
+              break
+            }
+          }
+          const exportKind: Kind =
+            declaration.type === 'InterfaceDeclaration' ||
+            declaration.type === 'TypeAlias'
+              ? 'type'
+              : 'value'
+
+          let convertedExportDeclaration:
+            | ExportDefaultDeclaration
+            | ExportNamedDeclaration
+
+          if (isDefault) {
+            convertedExportDeclaration = {
+              type: 'ExportDefaultDeclaration',
+              declaration: (convertedDeclaration: any),
+              exportKind,
+            }
+          } else {
+            convertedExportDeclaration = {
+              type: 'ExportNamedDeclaration',
+              declaration: convertedDeclaration,
+              exportKind,
+              specifiers: [],
+              source,
+            }
+          }
+          convertedDeclarations.push(convertedExportDeclaration)
+        }
+        if (specifiers.length) {
+          convertedDeclarations.push({
+            type: 'ExportNamedDeclaration',
+            declaration: null,
+            exportKind: 'value',
+            specifiers,
+            source,
+          })
+        }
+      }
+      if (convertedDeclarations.length) {
+        this.declareModule(file, convertedDeclarations)
+      }
+    }
   }
 }
 

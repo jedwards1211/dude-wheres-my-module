@@ -5,6 +5,7 @@ import type {
   ExportNamedDeclaration,
   ExportDefaultDeclaration,
   ExportAllDeclaration,
+  DeclareModule,
 } from '../ASTTypes'
 
 export interface Parser {
@@ -16,6 +17,7 @@ export interface Parser {
       | ExportNamedDeclaration
       | ExportDefaultDeclaration
       | ExportAllDeclaration
+      | DeclareModule
     >
   >;
 }

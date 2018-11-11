@@ -16,6 +16,7 @@ export type Progress = { completed: number, total: number }
 type Events = {
   ready: [],
   progress: [Progress],
+  error: [Error],
 }
 
 export default class WatchingIndexer extends EventEmitter<Events> {
@@ -63,10 +64,16 @@ export default class WatchingIndexer extends EventEmitter<Events> {
     this.allFiles.add(file)
     this.emitProgress()
     this.pendingFiles.add(file)
-    this.index.declareModule(file, await this.parser.parse(file))
-    this.pendingFiles.delete(file)
-    if (this.isReady()) this.emit('ready')
-    this.emitProgress()
+    try {
+      this.index.declareModule(file, await this.parser.parse(file))
+    } catch (error) {
+      this.emit('error', error)
+      this.allFiles.delete(file)
+    } finally {
+      this.pendingFiles.delete(file)
+      if (this.isReady()) this.emit('ready')
+      this.emitProgress()
+    }
   }
 
   async start(): Promise<void> {

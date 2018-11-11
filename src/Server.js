@@ -57,6 +57,7 @@ const server = net
   .listen(files.sock, () => console.log(`listening on ${files.sock}`)) // eslint-disable-line no-console
 
 indexer.start()
+indexer.on('error', error => log.write(error.stack + '\n'))
 
 async function cleanup(): Promise<void> {
   await Promise.all([
@@ -99,7 +100,7 @@ server.on('connection', (sock: net.Socket) => {
           getSuggestedImports: index.getSuggestedImports(getSuggestedImports),
         }
       } catch (error) {
-        log.write(error.stack)
+        log.write(error.stack + '\n')
         message = {
           seq,
           error: error.stack,

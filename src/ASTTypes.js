@@ -90,6 +90,11 @@ export type VariableDeclaration = {
   declarations: Array<VariableDeclarator>,
 }
 
+export type DeclareVariable = {
+  type: 'DeclareVariable',
+  id: Identifier,
+}
+
 export type VariableDeclarator = {
   type: 'VariableDeclarator',
   id: Identifier,
@@ -110,7 +115,51 @@ export type ClassDeclaration = {
   id: Identifier,
 }
 
+export type DeclareClass = {
+  type: 'DeclareClass',
+  id: Identifier,
+}
+
 export type FunctionDeclaration = {
   type: 'FunctionDeclaration',
   id: Identifier,
+}
+
+export type DeclareFunction = {
+  type: 'DeclareFunction',
+  id: Identifier,
+}
+
+export type Literal = {
+  type: 'Literal',
+  value: any,
+}
+
+export type DeclareModule = {
+  type: 'DeclareModule',
+  id: Literal,
+  body: DeclareModuleBlockStatement,
+}
+
+export type DeclareModuleBlockStatement = {
+  type: 'BlockStatement',
+  body: Array<DeclareModuleStatement>,
+}
+
+export type DeclareModuleStatement = DeclareExportDeclaration | { type: string }
+
+export type DeclareExportDeclaration = {
+  type: 'DeclareExportDeclaration',
+  default: boolean,
+  declaration: ?(
+    | DeclareClass
+    | DeclareFunction
+    | DeclareVariable
+    | InterfaceDeclaration
+    | TypeAlias
+  ),
+  specifiers: Array<
+    ExportSpecifier | ExportDefaultSpecifier | ExportNamespaceSpecifier
+  >,
+  source: ?StringLiteral,
 }

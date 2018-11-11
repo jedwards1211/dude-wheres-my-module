@@ -5,6 +5,7 @@ import type {
   ExportNamedDeclaration,
   ExportDefaultDeclaration,
   ExportAllDeclaration,
+  DeclareModule,
 } from '../ASTTypes'
 import { readFile } from 'fs-extra'
 import { parse } from 'flow-parser'
@@ -19,6 +20,7 @@ export default class FlowParser implements Parser {
       | ExportNamedDeclaration
       | ExportDefaultDeclaration
       | ExportAllDeclaration
+      | DeclareModule
     >
   > {
     const code = await readFile(file, 'utf8')
@@ -37,6 +39,7 @@ export default class FlowParser implements Parser {
       | ExportNamedDeclaration
       | ExportDefaultDeclaration
       | ExportAllDeclaration
+      | DeclareModule
     > {
       const body = ast.type === 'File' ? ast.program.body : ast.body
       for (let declaration of body) {
@@ -45,6 +48,7 @@ export default class FlowParser implements Parser {
           case 'ExportNamedDeclaration':
           case 'ExportDefaultDeclaration':
           case 'ExportAllDeclaration':
+          case 'DeclareModule':
             yield declaration
             break
         }
