@@ -1,7 +1,7 @@
 // @flow
 
 import path from 'path'
-import sortBy from 'lodash/sortBy'
+import isConfigFile from './isConfigFile'
 
 import type {
   Kind,
@@ -38,12 +38,6 @@ type ExportInfo = $ReadOnly<{
    * The kind of export (value or type).
    */
   kind: Kind,
-  /**
-   * If this is specified asepreferred in user configuration files,
-   * the value of this field should be the index in the list of preferred
-   * imports.
-   */
-  preferred?: number,
 }>
 
 export class ModuleInfo {
@@ -111,6 +105,20 @@ export class ModuleInfo {
   addExport(exportInfo: ExportInfo) {
     this.exports.set(exportInfo.identifier, exportInfo)
   }
+
+  numImportingModules(identifier: string): number {
+    const modules = this.importingModulesByIdentifier.get(identifier)
+    return modules ? modules.size : 0
+  }
+
+  isPreferred(identifier: string): boolean {
+    const modules = this.importingModulesByIdentifier.get(identifier)
+    if (!modules) return false
+    for (let m of modules) {
+      if (isConfigFile(m)) return true
+    }
+    return false
+  }
 }
 
 type Options = {
@@ -145,7 +153,6 @@ export default class ModuleIndex {
   }
 
   getModule(file: string): ModuleInfo {
-    requireAbsolute(file)
     let info = this.modules.get(file)
     if (!info) {
       info = new ModuleInfo(file)
@@ -184,13 +191,37 @@ export default class ModuleIndex {
   getExports({ identifier, kind }: ExportsQuery): Array<ExportInfo> {
     const moduleMap = this.identifiers.get(identifier) || []
     if (!moduleMap) return []
-    let result = sortBy([...moduleMap.values()], ({ file }: ExportInfo) => {
-      const moduleInfo = this.getModule(file)
-      const importingModules = moduleInfo.importingModulesByIdentifier.get(
-        identifier
-      )
-      return importingModules ? -importingModules.size : 0
-    })
+    let result = [...moduleMap.values()].sort(
+      (a: ExportInfo, b: ExportInfo) => {
+        const aModule = this.getModule(a.file)
+        const bModule = this.getModule(b.file)
+        const aPreferred = aModule.isPreferred(identifier)
+        const bPreferred = bModule.isPreferred(identifier)
+        if (aPreferred && !bPreferred) return 1
+        if (!aPreferred && bPreferred) return -1
+
+        const numImportsDiff =
+          aModule.numImportingModules(identifier) -
+          bModule.numImportingModules(identifier)
+        if (numImportsDiff) return numImportsDiff
+
+        const aNative = !path.isAbsolute(a.file)
+        const bNative = !path.isAbsolute(b.file)
+        const aNodeModules = a.file.startsWith(this.nodeModulesDir)
+        const bNodeModules = b.file.startsWith(this.nodeModulesDir)
+        const aLocal = !aNative && !aNodeModules
+        const bLocal = !bNative && !bNodeModules
+        if (aLocal && !bLocal) return 1
+        if (!aLocal && bLocal) return -1
+        if (aNodeModules && !bNodeModules) return 1
+        if (!aNodeModules && bNodeModules) return -1
+        if (aNative && !bNative) return 1
+        if (!aNative && bNative) return -1
+        if (a.file < b.file) return 1
+        if (a.file > b.file) return -1
+        return 0
+      }
+    )
     if (kind) result = result.filter(e => e.kind === kind)
     return result
   }
@@ -215,7 +246,7 @@ export default class ModuleIndex {
         ) {
           request = pkg
         }
-      } else {
+      } else if (path.isAbsolute(exportInfo.file)) {
         request = path.relative(path.dirname(file), request)
         if (!request.startsWith('.')) request = `./${request}`
       }
@@ -289,6 +320,7 @@ export default class ModuleIndex {
    * will remain in the index.
    */
   undeclareModule(file: string) {
+    requireAbsolute(file)
     const moduleInfo = this.getModule(file)
 
     for (let exportInfo of moduleInfo.exports.values()) {
@@ -344,6 +376,7 @@ export default class ModuleIndex {
       | DeclareModule
     >
   ) {
+    requireAbsolute(file)
     this.undeclareModule(file)
 
     const _module = this.getModule(file)

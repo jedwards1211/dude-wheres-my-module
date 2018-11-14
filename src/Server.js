@@ -4,7 +4,7 @@ import '@babel/polyfill'
 import ModuleIndex from './ModuleIndex'
 import WatchingIndexer from './WatchingIndexer'
 import FlowParser from './parsers/flow'
-import type { SuggestedImportsQuery } from './ModuleIndex'
+import type { Kind } from './ASTTypes'
 import type { Progress } from './WatchingIndexer'
 import JSONStream from 'JSONStream'
 import fs from 'fs-extra'
@@ -13,6 +13,14 @@ import net from 'net'
 import tempFiles from './tempFiles'
 import { promisify } from 'util'
 import findRoot from 'find-root'
+import getSuggestedImportsFn from './getSuggestedImports'
+
+export type SuggestedImportsQuery = $ReadOnly<{
+  identifier?: string,
+  code?: string,
+  type?: Kind,
+  file: string,
+}>
 
 export type Message = {
   seq: number,
@@ -46,10 +54,11 @@ fs.writeFileSync(files.pids, `${process.pid}\tserver`, 'utf8')
 const log = fs.createWriteStream(files.log, 'utf8')
 
 const index = new ModuleIndex({ projectRoot })
+const parser = new FlowParser()
 const indexer = new WatchingIndexer({
   projectRoot,
   index,
-  parser: new FlowParser(),
+  parser,
 })
 
 const server = net
@@ -97,7 +106,13 @@ server.on('connection', (sock: net.Socket) => {
       try {
         message = {
           seq,
-          getSuggestedImports: index.getSuggestedImports(getSuggestedImports),
+          getSuggestedImports: getSuggestedImports.code
+            ? getSuggestedImportsFn({
+                ...getSuggestedImports,
+                parser,
+                index,
+              })
+            : index.getSuggestedImports({ ...getSuggestedImports }),
         }
       } catch (error) {
         log.write(error.stack + '\n')

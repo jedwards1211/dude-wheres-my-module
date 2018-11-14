@@ -2,6 +2,7 @@
 // @flow
 
 import path from 'path'
+import { spawn } from 'child_process'
 import type { Parser } from './parsers/Parser'
 import chokidar from 'chokidar'
 import ModuleIndex from './ModuleIndex'
@@ -10,6 +11,7 @@ import { loadIgnoreFiles } from './gitignoreToChokidar'
 import EventEmitter from '@jcoreio/typed-event-emitter'
 import emitted from 'p-event'
 import throttle from 'lodash/throttle'
+import isConfigFile from './isConfigFile'
 
 export type Progress = { completed: number, total: number }
 
@@ -65,7 +67,19 @@ export default class WatchingIndexer extends EventEmitter<Events> {
     this.emitProgress()
     this.pendingFiles.add(file)
     try {
-      this.index.declareModule(file, await this.parser.parse(file))
+      if (isConfigFile(file)) {
+        delete require.cache[file]
+        const configure = require(file)
+        const { preferredImports } = (await configure()) || {}
+        if (preferredImports) {
+          const code = Array.isArray(preferredImports)
+            ? preferredImports.join('\n')
+            : String(preferredImports)
+          this.index.declareModule(file, await this.parser.parse({ code }))
+        }
+      } else {
+        this.index.declareModule(file, await this.parser.parse({ file }))
+      }
     } catch (error) {
       this.emit('error', error)
       this.allFiles.delete(file)
@@ -76,12 +90,52 @@ export default class WatchingIndexer extends EventEmitter<Events> {
     }
   }
 
+  async loadNatives(): Promise<void> {
+    const chunks = []
+    const child = spawn('node', [require.resolve('./printNatives')], {
+      cwd: this.projectRoot,
+      stdio: 'pipe',
+    })
+    child.stdout.on('data', chunk => chunks.push(chunk))
+    await new Promise((resolve: any, reject: any) => {
+      const withCleanup = callback => (...args: any) => {
+        child.removeListener('close', resolve)
+        child.removeListener('error', reject)
+        callback(...args)
+      }
+      child.on('close', withCleanup(resolve))
+      child.on('error', withCleanup(reject))
+    })
+    const natives = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+    const { index } = this
+    for (let key in natives) {
+      index.addExport(key, {
+        file: key,
+        kind: 'value',
+        identifier: ('default': any),
+        source: 'natives',
+      })
+      for (let identifier of natives[key]) {
+        index.addExport(identifier, {
+          file: key,
+          kind: 'value',
+          identifier,
+          source: 'natives',
+        })
+      }
+    }
+  }
+
   async start(): Promise<void> {
     const { projectRoot } = this
 
+    await this.loadNatives().catch(error => console.error(error.stack)) // eslint-disable-line no-console
     if (this.watcher) return
     this.watcher = chokidar.watch(['**/*.js', '**/*.jsx'], {
-      ignored: [/(^|[/\\])\../, ...(await loadIgnoreFiles({ projectRoot }))],
+      ignored: [
+        ...(await loadIgnoreFiles({ projectRoot })),
+        file => !isConfigFile(file) && /(^|[/\\])\../.test(file),
+      ],
       cwd: this.projectRoot,
     })
     this.watcher.on('ready', () => {

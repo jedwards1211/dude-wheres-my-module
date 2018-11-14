@@ -18,17 +18,17 @@ describe('ModuleIndex', function() {
 
       for (let file of await glob('src/**/*.js', { cwd: projectRoot })) {
         file = path.resolve(projectRoot, file)
-        index.declareModule(file, await parser.parse(file))
+        index.declareModule(file, await parser.parse({ file }))
       }
       for (let file of await glob('test/**/*.js', { cwd: projectRoot })) {
         file = path.resolve(projectRoot, file)
-        index.declareModule(file, await parser.parse(file))
+        index.declareModule(file, await parser.parse({ file }))
       }
 
       expect(
         index.getSuggestedImports({
           identifier: 'sortBy',
-          file: require.resolve('../src/parsers/babel'),
+          file: require.resolve('../src/parsers/flow'),
         })
       ).to.deep.equal(['import sortBy from "lodash/sortBy"'])
 

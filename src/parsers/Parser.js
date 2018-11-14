@@ -10,7 +10,7 @@ import type {
 
 export interface Parser {
   parse(
-    file: string
+    {| file: string |} | {| code: string |}
   ): Promise<
     Iterable<
       | ImportDeclaration
@@ -20,4 +20,17 @@ export interface Parser {
       | DeclareModule
     >
   >;
+  getUndefinedIdentifiers(code: string): Array<UndefinedIdentifier>;
+}
+
+export type Location = {
+  line: number,
+  column: number,
+}
+
+export type UndefinedIdentifier = {
+  identifier: string,
+  start: Location,
+  end: Location,
+  context: string,
 }
