@@ -52,6 +52,18 @@ try {
 fs.writeFileSync(files.pids, `${process.pid}\tserver`, 'utf8')
 
 const log = fs.createWriteStream(files.log, 'utf8')
+const writeStdout = process.stdout.write
+const writeStderr = process.stderr.write
+// $FlowFixMe
+process.stdout.write = (data: any) => {
+  writeStdout.call(process.stdout, data)
+  log.write(data)
+}
+// $FlowFixMe
+process.stderr.write = (data: any) => {
+  writeStderr.call(process.stderr, data)
+  log.write(data)
+}
 
 const index = new ModuleIndex({ projectRoot })
 const parser = new FlowParser()
@@ -66,7 +78,7 @@ const server = net
   .listen(files.sock, () => console.log(`listening on ${files.sock}`)) // eslint-disable-line no-console
 
 indexer.start()
-indexer.on('error', error => log.write(error.stack + '\n'))
+indexer.on('error', error => console.error(error.stack)) // eslint-disable-line no-console
 
 async function cleanup(): Promise<void> {
   await Promise.all([
@@ -115,7 +127,7 @@ server.on('connection', (sock: net.Socket) => {
             : index.getSuggestedImports({ ...getSuggestedImports }),
         }
       } catch (error) {
-        log.write(error.stack + '\n')
+        console.error(error.stack) // eslint-disable-line no-console
         message = {
           seq,
           error: error.stack,
@@ -125,12 +137,16 @@ server.on('connection', (sock: net.Socket) => {
     }
   })
   const handleProgress = (progress: Progress) => outstream.write({ progress })
+  const handleError = (error: Error) =>
+    outstream.write({ error: error.message })
   const handleReady = () => outstream.write({ ready: true })
   indexer.on('progress', handleProgress)
   indexer.on('ready', handleReady)
+  indexer.on('error', handleError)
   function handleClose() {
     indexer.removeListener('progress', handleProgress)
     indexer.removeListener('ready', handleReady)
+    indexer.removeListener('error', handleError)
   }
   sock.on('close', handleClose)
   sock.on('error', handleClose)

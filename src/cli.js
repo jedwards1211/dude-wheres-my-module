@@ -12,18 +12,21 @@ const projectRoot = findRoot(process.cwd())
 const client = new Client(projectRoot)
 
 async function withStatus<T>(fn: () => Promise<T>): Promise<T> {
-  const listener = ({ completed, total }) => {
+  const handleProgress = ({ completed, total }) => {
     process.stdout.write(
       `${eraseStartLine}${cursorLeft}Server is starting... ${completed}/${total} (${Math.floor(
         (completed * 100) / total
       )}%)`
     )
   }
-  client.on('progress', listener)
+  const handleError = error => process.stderr.write(error)
+  client.on('progress', handleProgress)
+  client.on('error', handleError)
   try {
     return await fn()
   } finally {
-    client.removeListener('progress', listener)
+    client.removeListener('progress', handleProgress)
+    client.removeListener('error', handleError)
     process.stdout.write(eraseStartLine + cursorLeft)
   }
 }
