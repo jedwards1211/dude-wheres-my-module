@@ -23,7 +23,6 @@ export type Message = {
 type Events = {
   ready: [],
   progress: [Progress],
-  error: [string],
 }
 
 export default class Client extends EventEmitter<Events> {
@@ -84,13 +83,8 @@ export default class Client extends EventEmitter<Events> {
 
       this.instream.on(
         'data',
-        (message: {
-          seq?: number,
-          progress?: Progress,
-          ready?: boolean,
-          error?: string,
-        }) => {
-          const { seq, progress, ready, error } = message
+        (message: { seq?: number, progress?: Progress, ready?: boolean }) => {
+          const { seq, progress, ready } = message
           if (seq != null) {
             const callback = this.callbacks.get(seq)
             if (callback) {
@@ -100,7 +94,6 @@ export default class Client extends EventEmitter<Events> {
           }
           if (progress) this.emit('progress', progress)
           if (ready) this.emit('ready')
-          if (error) this.emit('error', error)
         }
       )
 

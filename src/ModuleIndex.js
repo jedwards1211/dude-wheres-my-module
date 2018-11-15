@@ -2,6 +2,7 @@
 
 import path from 'path'
 import isConfigFile from './isConfigFile'
+import console from './console'
 
 import type {
   Kind,

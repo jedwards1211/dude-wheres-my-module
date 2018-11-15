@@ -14,6 +14,7 @@ import tempFiles from './tempFiles'
 import { promisify } from 'util'
 import findRoot from 'find-root'
 import getSuggestedImportsFn from './getSuggestedImports'
+import console, { stdout, stderr } from './console'
 
 export type SuggestedImportsQuery = $ReadOnly<{
   identifier?: string,
@@ -41,6 +42,15 @@ if (!fs.pathExistsSync(projectRoot)) {
 
 const files = tempFiles(projectRoot)
 
+const logFile = fs.createWriteStream(files.log, 'utf8')
+stdout.pipe(logFile)
+stderr.pipe(logFile)
+
+process.on('uncaughtException', err => console.error(err.stack))
+process.on('unhandledRejection', reason =>
+  console.error((reason && reason.stack) || String(reason))
+)
+
 fs.mkdirpSync(files.dir)
 try {
   lockFile.lockSync(files.lock)
@@ -50,20 +60,6 @@ try {
 }
 
 fs.writeFileSync(files.pids, `${process.pid}\tserver`, 'utf8')
-
-const log = fs.createWriteStream(files.log, 'utf8')
-const writeStdout = process.stdout.write
-const writeStderr = process.stderr.write
-// $FlowFixMe
-process.stdout.write = (data: any) => {
-  writeStdout.call(process.stdout, data)
-  log.write(data)
-}
-// $FlowFixMe
-process.stderr.write = (data: any) => {
-  writeStderr.call(process.stderr, data)
-  log.write(data)
-}
 
 const index = new ModuleIndex({ projectRoot })
 const parser = new FlowParser()
@@ -82,7 +78,7 @@ indexer.on('error', error => console.error(error.stack)) // eslint-disable-line 
 
 async function cleanup(): Promise<void> {
   await Promise.all([
-    promisify(cb => log.close(cb)),
+    // promisify(cb => logFile.close(cb)),
     fs.remove(files.lock),
     fs.remove(files.sock),
     fs.remove(files.pids),
@@ -137,16 +133,12 @@ server.on('connection', (sock: net.Socket) => {
     }
   })
   const handleProgress = (progress: Progress) => outstream.write({ progress })
-  const handleError = (error: Error) =>
-    outstream.write({ error: error.message })
   const handleReady = () => outstream.write({ ready: true })
   indexer.on('progress', handleProgress)
   indexer.on('ready', handleReady)
-  indexer.on('error', handleError)
   function handleClose() {
     indexer.removeListener('progress', handleProgress)
     indexer.removeListener('ready', handleReady)
-    indexer.removeListener('error', handleError)
   }
   sock.on('close', handleClose)
   sock.on('error', handleClose)

@@ -12,6 +12,7 @@ import EventEmitter from '@jcoreio/typed-event-emitter'
 import emitted from 'p-event'
 import throttle from 'lodash/throttle'
 import isConfigFile from './isConfigFile'
+import console from './console'
 
 export type Progress = { completed: number, total: number }
 
