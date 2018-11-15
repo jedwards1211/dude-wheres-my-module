@@ -8,7 +8,7 @@ export function gitignoreToChokidar(lines: Array<string>): Array<string> {
   const newLines = []
   lines.forEach((line: string) => {
     line = line.trim()
-    if (!line.length) return
+    if (!line.length || line.startsWith('#')) return
     const slashPos = line.indexOf('/')
     if (slashPos < 0) {
       // something like "*.js" which we need to interpret as [
