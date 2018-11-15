@@ -124,6 +124,7 @@ export default class FlowParser implements Parser {
         const parent = parentPath.node
 
         if (
+          node.type === 'JSXIdentifier' ||
           scope.lookup(node.name) ||
           scope.lookupType(node.name) ||
           lookupTypeParameter(path, node.name)
