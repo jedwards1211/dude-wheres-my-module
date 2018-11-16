@@ -150,7 +150,7 @@ export default class FlowParser implements Parser {
           case 'ClassProperty':
           case 'MethodDefinition':
           case 'Property': {
-            if (parent.key === node) return false
+            if (parent.key === node) return parent.value !== node
             break
           }
           case 'ArrowFunctionExpression':

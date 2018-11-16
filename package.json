@@ -19,7 +19,7 @@
     "flow:coverage": "for file in src/**.js test/**.js; do echo $file; flow coverage $file; done",
     "flow:watch": "flow-watch -e js,js.flow,flowconfig --ignore es/ --ignore node_modules/ --watch .flowconfig --watch src/ --watch test/",
     "clean": "rimraf es lib $(cd src; ls) *.js.flow",
-    "build": "npm run clean && babel src --out-dir es && flow-copy-source -v src/ es && BABEL_ENV=es5 babel src --out-dir . && flow-copy-source -v src/ .",
+    "build": "npm run clean && babel src --out-dir es --ignore '**/__tests__/**' && flow-copy-source -v src/ es --ignore '**/__tests__/**' && BABEL_ENV=es5 babel src --out-dir . --ignore '**/__tests__/**' && flow-copy-source -v src/ . --ignore '**/__tests__/**'",
     "test": "NODE_ENV=production BABEL_ENV=es5 mocha $npm_package_config_mocha && NODE_ENV=production BABEL_ENV=coverage nyc --reporter=lcov --reporter=text mocha $npm_package_config_mocha",
     "test:debug": "NODE_ENV=production BABEL_ENV=es5 mocha --inspect-brk $npm_package_config_mocha && NODE_ENV=production BABEL_ENV=coverage nyc --reporter=lcov --reporter=text mocha $npm_package_config_mocha",
     "test:watch": "NODE_ENV=production BABEL_ENV=test mocha --watch $npm_package_config_mocha",
@@ -33,7 +33,7 @@
     "travis-deploy-once": "travis-deploy-once"
   },
   "config": {
-    "mocha": "-r @babel/register ./test/**/*.js",
+    "mocha": "-r @babel/register ./src/**/__tests__/*.js ./test/**/*.js",
     "commitizen": {
       "path": "cz-conventional-changelog"
     }
@@ -91,7 +91,7 @@
     "eslint-plugin-flowtype": "^3.2.0",
     "eslint-watch": "^4.0.2",
     "flow-bin": "^0.85.0",
-    "flow-copy-source": "^1.2.1",
+    "flow-copy-source": "^2.0.2",
     "flow-watch": "^1.1.0",
     "glob-gitignore": "^1.0.11",
     "husky": "^0.14.3",
