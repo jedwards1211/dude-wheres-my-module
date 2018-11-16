@@ -20,6 +20,7 @@ export interface Parser {
       | DeclareModule
     >
   >;
+  importDeclaration(code: string): ImportDeclaration;
   getUndefinedIdentifiers(code: string): Array<UndefinedIdentifier>;
 }
 

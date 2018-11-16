@@ -47,6 +47,13 @@ const typeParameterScopeTypes = [
 const TypeParameterScopeType = Type.or.apply(Type, typeParameterScopeTypes)
 
 export default class FlowParser implements Parser {
+  importDeclaration(code: string): ImportDeclaration {
+    const ast = j.template.statement([code])
+    if (ast.type !== 'ImportDeclaration') {
+      throw new Error(`not an import declaration: ${code}`)
+    }
+    return ast
+  }
   getUndefinedIdentifiers(code: string): Array<UndefinedIdentifier> {
     const lines = code.split(/\r\n?|\n/gm)
     const root = j(code)
@@ -150,7 +157,13 @@ export default class FlowParser implements Parser {
           case 'ClassProperty':
           case 'MethodDefinition':
           case 'Property': {
-            if (parent.key === node) return parent.value !== node
+            if (
+              parent.key === node &&
+              (parent.value.type !== node.type ||
+                parent.value.name !== node.name)
+            ) {
+              return false
+            }
             break
           }
           case 'ArrowFunctionExpression':

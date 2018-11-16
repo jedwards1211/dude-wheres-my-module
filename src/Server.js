@@ -61,8 +61,8 @@ try {
 
 fs.writeFileSync(files.pids, `${process.pid}\tserver`, 'utf8')
 
-const index = new ModuleIndex({ projectRoot })
 const parser = new FlowParser()
+const index = new ModuleIndex({ projectRoot })
 const indexer = new WatchingIndexer({
   projectRoot,
   index,

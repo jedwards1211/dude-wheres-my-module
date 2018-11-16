@@ -179,8 +179,8 @@ export default class WatchingIndexer extends EventEmitter<Events> {
 
 if (!module.parent) {
   const projectRoot = process.cwd()
-  const index = new ModuleIndex({ projectRoot })
   const parser = new FlowParser()
+  const index = new ModuleIndex({ projectRoot })
 
   const watcher = new WatchingIndexer({ projectRoot, parser, index })
   watcher.start()

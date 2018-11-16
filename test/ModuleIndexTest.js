@@ -11,10 +11,10 @@ describe('ModuleIndex', function() {
   describe(`declareModule`, function() {
     it(`basic test`, async function(): Promise<void> {
       const projectRoot = path.resolve(__dirname, '..')
+      const parser = new FlowParser()
       const index = new ModuleIndex({
         projectRoot,
       })
-      const parser = new FlowParser()
 
       for (let file of await glob('src/**/*.js', { cwd: projectRoot })) {
         file = path.resolve(projectRoot, file)
@@ -30,21 +30,33 @@ describe('ModuleIndex', function() {
           identifier: 'sortBy',
           file: require.resolve('../src/parsers/flow'),
         })
-      ).to.deep.equal(['import sortBy from "lodash/sortBy"'])
+      ).to.containSubset(
+        ['import { sortBy } from "lodash"'].map(code => ({
+          code,
+        }))
+      )
 
       expect(
         index.getSuggestedImports({
           identifier: 'ModuleInfo',
           file: __filename,
         })
-      ).to.deep.equal(['import { ModuleInfo } from "../src/ModuleIndex"'])
+      ).to.containSubset(
+        ['import { ModuleInfo } from "../src/ModuleIndex"'].map(code => ({
+          code,
+        }))
+      )
 
       expect(
         index.getSuggestedImports({
           identifier: 'Kind',
           file: __filename,
         })
-      ).to.deep.equal(['import { type Kind } from "../src/ASTTypes"'])
+      ).to.containSubset(
+        ['import { type Kind } from "../src/ASTTypes"'].map(code => ({
+          code,
+        }))
+      )
 
       expect(index.getExports({ identifier: 'ModuleIndex' })).to.deep.equal([
         {

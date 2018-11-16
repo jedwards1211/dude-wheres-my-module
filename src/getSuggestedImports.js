@@ -4,7 +4,15 @@
  */
 
 import type { Parser, UndefinedIdentifier } from './parsers/Parser'
-import type ModuleIndex, { SuggestedImportResult } from './ModuleIndex'
+import type ModuleIndex, {
+  SuggestedImportResult as BaseResult,
+} from './ModuleIndex'
+
+import { type ImportDeclaration } from './ASTTypes'
+
+export type SuggestedImportResult = BaseResult & {
+  ast: ImportDeclaration,
+}
 
 export default function getSuggestedImports({
   code,
@@ -28,7 +36,12 @@ export default function getSuggestedImports({
     const { identifier } = undefinedIdentifier
     result[identifier] = {
       ...undefinedIdentifier,
-      suggested: index.getSuggestedImports({ identifier, file }),
+      suggested: index
+        .getSuggestedImports({ identifier, file })
+        .map(suggested => ({
+          ...suggested,
+          ast: parser.importDeclaration(suggested.code),
+        })),
     }
   }
   return result

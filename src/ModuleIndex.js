@@ -122,9 +122,9 @@ export class ModuleInfo {
   }
 }
 
-type Options = {
+type Options = {|
   projectRoot: string,
-}
+|}
 
 export type ExportsQuery = {
   identifier: string,
@@ -134,7 +134,6 @@ export type SuggestedImportsQuery = ExportsQuery & {
   file: string,
 }
 export type SuggestedImportResult = {
-  ast: ImportDeclaration,
   code: string,
 }
 
@@ -258,34 +257,12 @@ export default class ModuleIndex {
             code: `import ${
               kind === 'type' ? 'type ' : ''
             }* as ${identifier} from "${request}"`,
-            ast: {
-              type: 'ImportDeclaration',
-              specifiers: [
-                {
-                  type: 'ImportNamespaceSpecifier',
-                  local: { type: 'Identifier', name: identifier },
-                },
-              ],
-              importKind: kind,
-              source: { type: 'StringLiteral', value: request },
-            },
           }
         case 'default':
           return {
             code: `import ${
               kind === 'type' ? 'type ' : ''
             }${identifier} from "${request}"`,
-            ast: {
-              type: 'ImportDeclaration',
-              specifiers: [
-                {
-                  type: 'ImportDefaultSpecifier',
-                  local: { type: 'Identifier', name: identifier },
-                },
-              ],
-              importKind: kind,
-              source: { type: 'StringLiteral', value: request },
-            },
           }
         default:
           return {
@@ -294,22 +271,6 @@ export default class ModuleIndex {
             )}${
               identifier === exportInfo.identifier ? '' : ` as ${identifier}`
             } } from "${request}"`,
-            ast: {
-              type: 'ImportDeclaration',
-              specifiers: [
-                {
-                  type: 'ImportSpecifier',
-                  imported: {
-                    type: 'Identifier',
-                    name: String(exportInfo.identifier),
-                  },
-                  local: { type: 'Identifier', name: identifier },
-                  importKind: kind,
-                },
-              ],
-              importKind: 'value',
-              source: { type: 'StringLiteral', value: request },
-            },
           }
       }
     })
