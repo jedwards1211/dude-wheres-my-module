@@ -31,33 +31,23 @@ describe('ModuleIndex', function() {
           identifier: 'sortBy',
           file: require.resolve('../parsers/flow'),
         })
-      ).to.containSubset(
-        ['import { sortBy } from "lodash"'].map(code => ({
-          code,
-        }))
-      )
+      ).to.containSubset([{ code: 'import { sortBy } from "lodash"' }])
 
       expect(
         index.getSuggestedImports({
           identifier: 'ModuleInfo',
           file: __filename,
         })
-      ).to.containSubset(
-        ['import { ModuleInfo } from "../ModuleIndex"'].map(code => ({
-          code,
-        }))
-      )
+      ).to.containSubset([
+        { code: 'import { ModuleInfo } from "../ModuleIndex"' },
+      ])
 
       expect(
         index.getSuggestedImports({
           identifier: 'Kind',
           file: __filename,
         })
-      ).to.containSubset(
-        ['import { type Kind } from "../ASTTypes"'].map(code => ({
-          code,
-        }))
-      )
+      ).to.containSubset([{ code: 'import { type Kind } from "../ASTTypes"' }])
 
       expect(index.getExports({ identifier: 'ModuleIndex' })).to.deep.equal([
         {
