@@ -33,7 +33,7 @@
     "travis-deploy-once": "travis-deploy-once"
   },
   "config": {
-    "mocha": "-r @babel/register ./test/configure.js ./src/**/__tests__/*.js ./test/**/*.js",
+    "mocha": "-r @babel/register ./test/configure.js ./src/__tests__/*.js ./src/**/__tests__/*.js ./test/**/*.js",
     "commitizen": {
       "path": "cz-conventional-changelog"
     }

@@ -189,7 +189,7 @@ export default class ModuleIndex {
   }
 
   getExports({ identifier, kind }: ExportsQuery): Array<ExportInfo> {
-    const moduleMap = this.identifiers.get(identifier) || []
+    const moduleMap = this.identifiers.get(identifier)
     if (!moduleMap) return []
     let result = [...moduleMap.values()].sort(
       (a: ExportInfo, b: ExportInfo) => {
@@ -237,14 +237,18 @@ export default class ModuleIndex {
         request = path.relative(this.nodeModulesDir, request)
         const match = /^(@[^/]+\/)?[^/]+/.exec(request)
         const pkg = match && match[0]
-        if (
-          pkg &&
-          // $FlowFixMe
-          require.resolve(pkg, {
-            paths: [this.projectRoot],
-          }) === exportInfo.file
-        ) {
-          request = pkg
+        try {
+          if (
+            pkg &&
+            // $FlowFixMe
+            require.resolve(pkg, {
+              paths: [this.projectRoot],
+            }) === exportInfo.file
+          ) {
+            request = pkg
+          }
+        } catch (error) {
+          // ignore; maybe a nonexistent import we want to suggest anyway
         }
       } else if (path.isAbsolute(exportInfo.file)) {
         request = path.relative(path.dirname(file), request)
@@ -380,7 +384,12 @@ export default class ModuleIndex {
       if (!path.isAbsolute(sourceFile)) return
     } catch (err) {
       console.error('[dwmm] ERROR:', err.message, `(in file ${_module.file})`) // eslint-disable-line no-console
-      return
+      sourceFile = path.resolve(
+        source.value.startsWith('.')
+          ? path.dirname(_module.file)
+          : this.nodeModulesDir,
+        source.value
+      )
     }
     for (let specifier of specifiers) {
       const kind = specifier.importKind || declaration.importKind || 'value'

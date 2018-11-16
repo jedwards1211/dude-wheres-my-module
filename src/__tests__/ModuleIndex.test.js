@@ -1,16 +1,17 @@
 // @flow
 
-import ModuleIndex from '../src/ModuleIndex'
-import FlowParser from '../src/parsers/flow'
+import ModuleIndex from '../ModuleIndex'
+import FlowParser from '../parsers/flow'
 import path from 'path'
 import { glob } from 'glob-gitignore'
 import { expect } from 'chai'
+import { describe, it } from 'mocha'
 
 describe('ModuleIndex', function() {
   this.timeout(30000)
   describe(`declareModule`, function() {
     it(`basic test`, async function(): Promise<void> {
-      const projectRoot = path.resolve(__dirname, '..')
+      const projectRoot = path.resolve(__dirname, '..', '..')
       const parser = new FlowParser()
       const index = new ModuleIndex({
         projectRoot,
@@ -28,7 +29,7 @@ describe('ModuleIndex', function() {
       expect(
         index.getSuggestedImports({
           identifier: 'sortBy',
-          file: require.resolve('../src/parsers/flow'),
+          file: require.resolve('../parsers/flow'),
         })
       ).to.containSubset(
         ['import { sortBy } from "lodash"'].map(code => ({
@@ -42,7 +43,7 @@ describe('ModuleIndex', function() {
           file: __filename,
         })
       ).to.containSubset(
-        ['import { ModuleInfo } from "../src/ModuleIndex"'].map(code => ({
+        ['import { ModuleInfo } from "../ModuleIndex"'].map(code => ({
           code,
         }))
       )
@@ -53,14 +54,14 @@ describe('ModuleIndex', function() {
           file: __filename,
         })
       ).to.containSubset(
-        ['import { type Kind } from "../src/ASTTypes"'].map(code => ({
+        ['import { type Kind } from "../ASTTypes"'].map(code => ({
           code,
         }))
       )
 
       expect(index.getExports({ identifier: 'ModuleIndex' })).to.deep.equal([
         {
-          file: require.resolve('../src/ModuleIndex'),
+          file: require.resolve('../ModuleIndex'),
           identifier: 'default',
           kind: 'value',
         },
@@ -68,7 +69,7 @@ describe('ModuleIndex', function() {
 
       expect(index.getExports({ identifier: 'Kind' })).to.deep.equal([
         {
-          file: require.resolve('../src/ASTTypes'),
+          file: require.resolve('../ASTTypes'),
           identifier: 'Kind',
           kind: 'type',
         },
@@ -76,11 +77,42 @@ describe('ModuleIndex', function() {
 
       expect(index.getExports({ identifier: 'ModuleInfo' })).to.deep.equal([
         {
-          file: require.resolve('../src/ModuleIndex'),
+          file: require.resolve('../ModuleIndex'),
           identifier: 'ModuleInfo',
           kind: 'value',
         },
       ])
+    })
+    it(`tolerates nonexistent imports`, async function(): Promise<void> {
+      const projectRoot = path.resolve(__dirname, '..', '..')
+      const parser = new FlowParser()
+      const index = new ModuleIndex({
+        projectRoot,
+      })
+
+      index.declareModule(
+        path.join(__dirname, '..', '~test.js'),
+        await parser.parse({
+          code: `
+          import glab from 'glab'
+          import glomb from './glomb'
+        `,
+        })
+      )
+
+      expect(
+        index.getSuggestedImports({
+          identifier: 'glab',
+          file: __filename,
+        })
+      ).to.containSubset([{ code: 'import glab from "glab"' }])
+
+      expect(
+        index.getSuggestedImports({
+          identifier: 'glomb',
+          file: __filename,
+        })
+      ).to.containSubset([{ code: 'import glomb from "../glomb"' }])
     })
   })
 })

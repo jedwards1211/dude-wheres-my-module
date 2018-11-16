@@ -15,6 +15,7 @@ describe(`FlowParser`, function() {
       const found = parser.getUndefinedIdentifiers(`
         const foo = {bar}
         const baz = {foo}
+        const options = {cwd: foo}
       `)
       expect(found).to.have.lengthOf(1)
       expect(found[0].identifier).to.equal('bar')
