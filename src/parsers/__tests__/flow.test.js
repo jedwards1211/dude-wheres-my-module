@@ -20,5 +20,18 @@ describe(`FlowParser`, function() {
       expect(found).to.have.lengthOf(1)
       expect(found[0].identifier).to.equal('bar')
     })
+    it(`class property type issue`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        type Fonk = {}
+
+        class Publisher {
+          pubsub: PubSubEngine
+          fonk: Fonk
+        }
+      `)
+      expect(found).to.have.lengthOf(1)
+      expect(found[0].identifier).to.equal('PubSubEngine')
+    })
   })
 })
