@@ -141,10 +141,10 @@ export default class FlowParser implements Parser {
         switch (parent.type) {
           case 'JSXClosingElement':
           case 'JSXAttribute':
-            return false
           case 'ImportDefaultSpecifier':
           case 'ImportNamespaceSpecifier':
           case 'ImportSpecifier':
+          case 'FunctionTypeParam':
             return false
           case 'MemberExpression':
             if (parent.property === node) return false
