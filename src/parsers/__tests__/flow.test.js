@@ -36,7 +36,7 @@ describe(`FlowParser`, function() {
     it(`JSX component issue`, function() {
       const parser = new FlowParser()
       const found = parser.getUndefinedIdentifiers(`
-        const Foo = () => <Bar />
+        const Foo = () => <Bar baz="qux" />
       `)
       expect(found).to.have.lengthOf(1)
       expect(found[0].identifier).to.equal('Bar')
