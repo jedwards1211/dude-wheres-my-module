@@ -131,7 +131,6 @@ export default class FlowParser implements Parser {
         const parent = parentPath.node
 
         if (
-          node.type === 'JSXIdentifier' ||
           scope.lookup(node.name) ||
           scope.lookupType(node.name) ||
           lookupTypeParameter(path, node.name)
@@ -140,6 +139,9 @@ export default class FlowParser implements Parser {
         }
 
         switch (parent.type) {
+          case 'JSXIdentifier':
+            if (parent.type !== 'JSXOpeningElement') return false
+            break
           case 'ImportDefaultSpecifier':
           case 'ImportNamespaceSpecifier':
           case 'ImportSpecifier':
