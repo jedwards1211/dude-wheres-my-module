@@ -161,6 +161,7 @@ export default class FlowParser implements Parser {
           case 'Property': {
             if (
               parent.key === node &&
+              !parent.computed &&
               (!parent.value ||
                 parent.value.type !== node.type ||
                 parent.value.name !== node.name)

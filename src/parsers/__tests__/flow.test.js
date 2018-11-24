@@ -49,5 +49,13 @@ describe(`FlowParser`, function() {
       expect(found).to.have.lengthOf(1)
       expect(found[0].identifier).to.equal('Theme')
     })
+    it(`computed property issue`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        const foo = {[bar]: 'baz'}
+      `)
+      expect(found).to.have.lengthOf(1)
+      expect(found[0].identifier).to.equal('bar')
+    })
   })
 })
