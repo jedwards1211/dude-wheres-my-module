@@ -57,5 +57,86 @@ describe(`FlowParser`, function() {
       expect(found).to.have.lengthOf(1)
       expect(found[0].identifier).to.equal('bar')
     })
+    it(`type parameter bounds`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        class Foo<T: Bar> {
+        }
+      `)
+      expect(found).to.have.lengthOf(1)
+      expect(found[0].identifier).to.equal('Bar')
+    })
+    it(`computed property type issue`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        type Foo = {[bar: Bar]: Baz}
+      `)
+      expect(found).to.have.lengthOf(2)
+      expect(found[0].identifier).to.equal('Bar')
+      expect(found[1].identifier).to.equal('Baz')
+    })
+    it(`tagged template literals`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        const foo = bar\`baz\`
+      `)
+      expect(found).to.have.lengthOf(1)
+      expect(found[0].identifier).to.equal('bar')
+    })
+    it(`function expression names`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        const foo = function bar() { }
+      `)
+      expect(found).to.have.lengthOf(0)
+    })
+    it(`function expression names`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        const foo = function bar() { }
+      `)
+      expect(found).to.have.lengthOf(0)
+    })
+    it(`destructuring renaming`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        const {bar: baz} = {}
+      `)
+      expect(found).to.have.lengthOf(0)
+    })
+    it(`renamed export`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        export {foo as bar}
+      `)
+      expect(found).to.have.lengthOf(1)
+      expect(found[0].identifier).to.equal('foo')
+    })
+    it(`undefined export`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        export {foo}
+      `)
+      expect(found).to.have.lengthOf(1)
+      expect(found[0].identifier).to.equal('foo')
+    })
+    it(`export from`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        export {foo} from './foo'
+        export {bar as baz} from './bar'
+        export * as qux from './qux'
+      `)
+      expect(found).to.have.lengthOf(0)
+    })
+    it(`qualified type identifiers`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        type Foo = Bar.Baz
+        type Qux = Foo.Bux.Baz
+      `)
+      expect(found).to.have.lengthOf(1)
+      expect(found[0].identifier).to.equal('Bar')
+    })
   })
 })

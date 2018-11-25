@@ -149,6 +149,12 @@ export default class FlowParser implements Parser {
           case 'MemberExpression':
             if (parent.property === node) return false
             break
+          case 'ExportSpecifier':
+          case 'ExportNamespaceSpecifier':
+            if (parentPath.parent && parentPath.parent.node.source) return false
+            if (parent.exported === node) return false
+            break
+          case 'ObjectTypeIndexer':
           case 'QualifiedTypeIdentifier':
           case 'TypeAlias':
           case 'ClassDeclaration':
