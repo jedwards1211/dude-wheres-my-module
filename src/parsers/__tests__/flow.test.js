@@ -138,5 +138,14 @@ describe(`FlowParser`, function() {
       expect(found).to.have.lengthOf(1)
       expect(found[0].identifier).to.equal('Bar')
     })
+    it(`computed member expression`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        const bar = {}
+        const foo = bar[baz]
+      `)
+      expect(found).to.have.lengthOf(1)
+      expect(found[0].identifier).to.equal('baz')
+    })
   })
 })
