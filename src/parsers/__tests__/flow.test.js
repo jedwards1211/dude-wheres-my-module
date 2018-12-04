@@ -147,5 +147,22 @@ describe(`FlowParser`, function() {
       expect(found).to.have.lengthOf(1)
       expect(found[0].identifier).to.equal('baz')
     })
+    it(`lowercase JSX tag issue`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        const foo = <div />
+        const bar = <Baz />
+      `)
+      expect(found).to.have.lengthOf(1)
+      expect(found[0].identifier).to.equal('Baz')
+    })
+    it(`function in JSX attribute issue`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        const foo = <div onClick={handleOnClick(2)} />
+      `)
+      expect(found).to.have.lengthOf(1)
+      expect(found[0].identifier).to.equal('handleOnClick')
+    })
   })
 })

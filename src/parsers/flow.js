@@ -139,6 +139,11 @@ export default class FlowParser implements Parser {
         }
 
         switch (parent.type) {
+          case 'JSXOpeningElement':
+            if (node.name[0].toLowerCase() === node.name[0]) {
+              return false
+            }
+            break
           case 'JSXClosingElement':
           case 'JSXAttribute':
           case 'ImportDefaultSpecifier':
