@@ -164,5 +164,13 @@ describe(`FlowParser`, function() {
       expect(found).to.have.lengthOf(1)
       expect(found[0].identifier).to.equal('handleOnClick')
     })
+    it(`JSXMemberExpression issue`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        const foo = <MyContext.Provider />
+      `)
+      expect(found).to.have.lengthOf(1)
+      expect(found[0].identifier).to.equal('MyContext')
+    })
   })
 })
