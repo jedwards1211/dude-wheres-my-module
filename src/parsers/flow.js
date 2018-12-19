@@ -15,6 +15,8 @@ import { sortBy, uniqBy } from 'lodash'
 import { namedTypes, Type } from 'ast-types'
 import builtinIdentifiers from '../util/builtinIdentifiers'
 
+import convertRequiresToImports from './convertRequiresToImports'
+
 const j = jscodeshift.withParser('flow')
 
 type Node = Object
@@ -246,6 +248,7 @@ export default class FlowParser implements Parser {
             break
         }
       }
+      yield* (convertRequiresToImports(ast): any)
     }
     return declarations()
   }

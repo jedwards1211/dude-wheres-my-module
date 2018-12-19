@@ -5,6 +5,7 @@
 
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
+import recast from 'recast'
 
 import FlowParser from '../flow'
 
@@ -171,6 +172,79 @@ describe(`FlowParser`, function() {
       `)
       expect(found).to.have.lengthOf(1)
       expect(found[0].identifier).to.equal('MyContext')
+    })
+  })
+  describe(`parse`, function() {
+    it(`ignores shadowed require calls`, async function(): Promise<void> {
+      const parser = new FlowParser()
+      const code = `
+      function require() {}
+      const foo = require('foo')
+      `
+      const decls = [...(await parser.parse({ code }))].map(
+        ast => recast.print(ast).code
+      )
+      expect(decls).to.deep.equal([])
+    })
+    it(`converts require default to ImportDeclaration`, async function(): Promise<void> {
+      const parser = new FlowParser()
+      const code = `
+      const foo = require('foo')
+      `
+      const decls = [...(await parser.parse({ code }))].map(
+        ast => recast.print(ast).code
+      )
+      expect(decls).to.deep.equal([`import foo from "foo";`])
+    })
+    it(`converts destructured require to ImportDeclaration`, async function(): Promise<void> {
+      const parser = new FlowParser()
+      const code = `
+      const {foo, bar: baz} = require('foo')
+      `
+      const decls = [...(await parser.parse({ code }))].map(
+        ast => recast.print(ast).code
+      )
+      expect(decls).to.deep.equal([`import { foo, bar as baz } from "foo";`])
+    })
+    it(`converts indirect destructured require to ImportDeclaration`, async function(): Promise<void> {
+      const parser = new FlowParser()
+      const code = `
+      const blah = require('foo')
+      const {foo, bar: baz} = blah
+      `
+      const decls = [...(await parser.parse({ code }))].map(
+        ast => recast.print(ast).code
+      )
+      expect(decls).to.deep.equal([
+        `import blah from "foo";`,
+        `import { foo, bar as baz } from "foo";`,
+      ])
+    })
+    it(`converts property access on require variable to ImportDeclaration`, async function(): Promise<void> {
+      const parser = new FlowParser()
+      const code = `
+      const blah = require('foo')
+      blah.foo()
+      blah.bar()
+      `
+      const decls = [...(await parser.parse({ code }))].map(
+        ast => recast.print(ast).code
+      )
+      expect(decls).to.deep.equal([
+        `import blah from "foo";`,
+        `import { foo } from "foo";`,
+        `import { bar } from "foo";`,
+      ])
+    })
+    it(`converts direct property access on require to ImportDeclaration`, async function(): Promise<void> {
+      const parser = new FlowParser()
+      const code = `
+      require('foo').bar
+      `
+      const decls = [...(await parser.parse({ code }))].map(
+        ast => recast.print(ast).code
+      )
+      expect(decls).to.deep.equal([`import { bar } from "foo";`])
     })
   })
 })
