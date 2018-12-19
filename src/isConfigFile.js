@@ -4,5 +4,5 @@
  */
 
 export default function isConfigFile(file: string): boolean {
-  return /\.dwmm\.js$/.test(file)
+  return /\.dude-wheres-my-module\.js$/.test(file)
 }
