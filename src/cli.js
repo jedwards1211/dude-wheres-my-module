@@ -32,13 +32,20 @@ async function run(): Promise<void> {
   try {
     switch (process.argv[2]) {
       case 'stop': {
+        console.error('Stopping server...')
         await client.stopServer()
+        console.error('Stopped server')
         break
       }
+      case 'stahp':
       case 'kill': {
+        console.error('Killing server...')
         await client.killServer()
+        console.error('Killed server')
         break
       }
+      case 'wheres':
+      case "where's":
       case 'suggest': {
         const argIndex = process.argv.indexOf('--file')
         const file =
