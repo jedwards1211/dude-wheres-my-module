@@ -11,6 +11,14 @@ import FlowParser from '../flow'
 
 describe(`FlowParser`, function() {
   describe(`getUndefinedIdentifiers`, function() {
+    it(`uninitialized declarator issue`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        let foo: Bar
+      `)
+      expect(found).to.have.lengthOf(1)
+      expect(found[0].identifier).to.equal('Bar')
+    })
     it(`shorthand syntax issue`, function() {
       const parser = new FlowParser()
       const found = parser.getUndefinedIdentifiers(`
@@ -245,6 +253,13 @@ describe(`FlowParser`, function() {
         ast => recast.print(ast).code
       )
       expect(decls).to.deep.equal([`import { bar } from "foo";`])
+    })
+    it(`doesn't error on uninitialized declarators`, async function(): Promise<void> {
+      const parser = new FlowParser()
+      const code = `
+      let foo: ?Bar
+      `
+      await parser.parse({ code })
     })
   })
 })
