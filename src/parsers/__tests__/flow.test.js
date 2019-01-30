@@ -188,6 +188,13 @@ describe(`FlowParser`, function() {
       `)
       expect(found).to.have.lengthOf(0)
     })
+    it(`opaque type issue`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        export opaque type IdentifierName = string
+      `)
+      expect(found).to.have.lengthOf(0)
+    })
   })
   describe(`parse`, function() {
     it(`ignores shadowed require calls`, async function(): Promise<void> {

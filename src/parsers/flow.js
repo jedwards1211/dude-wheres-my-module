@@ -154,6 +154,7 @@ export default class FlowParser implements Parser {
           case 'FunctionTypeParam':
           case 'RestElement':
           case 'RestProperty':
+          case 'OpaqueType':
             return false
           case 'MemberExpression':
           case 'JSXMemberExpression':
