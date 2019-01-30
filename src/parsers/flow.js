@@ -152,6 +152,8 @@ export default class FlowParser implements Parser {
           case 'ImportNamespaceSpecifier':
           case 'ImportSpecifier':
           case 'FunctionTypeParam':
+          case 'RestElement':
+          case 'RestProperty':
             return false
           case 'MemberExpression':
           case 'JSXMemberExpression':

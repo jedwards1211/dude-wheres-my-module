@@ -181,6 +181,13 @@ describe(`FlowParser`, function() {
       expect(found).to.have.lengthOf(1)
       expect(found[0].identifier).to.equal('MyContext')
     })
+    it(`rest props issue`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers(`
+        const foo = ({variables: {bar, ...values}}) => {}
+      `)
+      expect(found).to.have.lengthOf(0)
+    })
   })
   describe(`parse`, function() {
     it(`ignores shadowed require calls`, async function(): Promise<void> {
