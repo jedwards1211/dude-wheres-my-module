@@ -66,8 +66,6 @@ function isRequireCall(callExpressionPath: any): boolean {
 }
 
 function getRequireSource(declaratorPath: any): any {
-  const { scope } = declaratorPath
-
   const initPath = declaratorPath.get('init')
 
   if (namedTypes.Identifier.check(initPath.node)) {

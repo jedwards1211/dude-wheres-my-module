@@ -4,3 +4,8 @@ node_modules
 lib
 es
 .eslintcache
+/parsers
+/util
+/*.js
+/*.js.flow
+!/.babelrc.js
