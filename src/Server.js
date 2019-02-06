@@ -4,7 +4,6 @@ import '@babel/polyfill'
 import ModuleIndex from './ModuleIndex'
 import WatchingIndexer from './WatchingIndexer'
 import FlowParser from './parsers/flow'
-import type { Kind } from './ASTTypes'
 import type { Progress } from './WatchingIndexer'
 import JSONStream from 'JSONStream'
 import fs from 'fs-extra'
@@ -16,12 +15,11 @@ import findRoot from 'find-root'
 import getSuggestedImportsFn from './getSuggestedImports'
 import console, { stdout, stderr } from './console'
 
-export type SuggestedImportsQuery = $ReadOnly<{
-  identifier?: string,
-  code?: string,
-  type?: Kind,
+export type SuggestedImportsQuery = {
+  code?: ?string,
+  identifier?: ?string,
   file: string,
-}>
+}
 
 export type Message = {
   seq: number,
@@ -111,16 +109,29 @@ server.on('connection', (sock: net.Socket) => {
     if (getSuggestedImports) {
       await indexer.waitUntilReady()
       let message
+      const { file, code, identifier } = getSuggestedImports
       try {
+        let result
+        if (code) {
+          result = getSuggestedImportsFn({
+            file,
+            code,
+            parser,
+            index,
+          })
+        } else if (identifier) {
+          result = {
+            [identifier]: {
+              identifier,
+              suggested: index.getSuggestedImports({ file, identifier }),
+            },
+          }
+        } else {
+          throw new Error('code or identifier must be given')
+        }
         message = {
           seq,
-          getSuggestedImports: getSuggestedImports.code
-            ? getSuggestedImportsFn({
-                ...getSuggestedImports,
-                parser,
-                index,
-              })
-            : index.getSuggestedImports({ ...getSuggestedImports }),
+          getSuggestedImports: result,
         }
       } catch (error) {
         console.error(error.stack) // eslint-disable-line no-console

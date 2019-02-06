@@ -62,6 +62,12 @@ export default class WatchingIndexer extends EventEmitter<Events> {
     await emitted(this, 'ready')
   }
 
+  deletePendingFile(file: string) {
+    this.pendingFiles.delete(file)
+    this.emitProgress()
+    if (this.isReady()) this.emit('ready')
+  }
+
   async processFile(file: string): Promise<void> {
     file = path.resolve(this.projectRoot, file)
     this.allFiles.add(file)
@@ -85,9 +91,7 @@ export default class WatchingIndexer extends EventEmitter<Events> {
       this.emit('error', error)
       this.allFiles.delete(file)
     } finally {
-      this.pendingFiles.delete(file)
-      if (this.isReady()) this.emit('ready')
-      this.emitProgress()
+      this.deletePendingFile(file)
     }
   }
 
@@ -162,7 +166,7 @@ export default class WatchingIndexer extends EventEmitter<Events> {
       async (file: string): Promise<void> => {
         console.error('[dwmm] unlinked:', file) // eslint-disable-line no-console
         this.allFiles.delete(file)
-        this.pendingFiles.delete(file)
+        this.deletePendingFile(file)
         file = path.resolve(projectRoot, file)
         this.index.undeclareModule(file)
       }

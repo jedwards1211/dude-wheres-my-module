@@ -1,9 +1,6 @@
 // @flow
 
-import type {
-  SuggestedImportsQuery,
-  SuggestedImportResult,
-} from './ModuleIndex'
+import type { SuggestedImportResult } from './ModuleIndex'
 import type { Progress } from './WatchingIndexer'
 import net from 'net'
 import tempFiles from './tempFiles'
@@ -14,6 +11,8 @@ import stream from 'stream'
 import JSONStream from 'JSONStream'
 import EventEmitter from '@jcoreio/typed-event-emitter'
 import findRoot from 'find-root'
+
+import { type SuggestedImportsQuery } from './Server'
 
 export type Message = {
   seq: number,

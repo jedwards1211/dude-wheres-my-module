@@ -14,21 +14,25 @@ export type SuggestedImportResult = BaseResult & {
   ast: ImportDeclaration,
 }
 
+export type SuggestedImportsQuery = {
+  code: string,
+  file: string,
+  parser: Parser,
+  index: ModuleIndex,
+}
+
+export type SuggestedImportsResult = {
+  [identifier: string]: UndefinedIdentifier & {
+    suggested: Array<SuggestedImportResult>,
+  },
+}
+
 export default function getSuggestedImports({
   code,
   file,
   parser,
   index,
-}: $ReadOnly<{
-  code: string,
-  file: string,
-  parser: Parser,
-  index: ModuleIndex,
-}>): {
-  [identifier: string]: UndefinedIdentifier & {
-    suggested: Array<SuggestedImportResult>,
-  },
-} {
+}: $ReadOnly<SuggestedImportsQuery>): SuggestedImportsResult {
   const undefinedIdentifiers = parser.getUndefinedIdentifiers(code)
 
   const result = {}

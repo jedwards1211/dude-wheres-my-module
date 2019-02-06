@@ -412,12 +412,15 @@ export default class ModuleIndex {
         identifier,
         kind,
       }
-      _module.addOwnImport(specifier.local.name, exportInfo)
+
+      const localName = (specifier.local || specifier.imported).name
+
+      _module.addOwnImport(localName, exportInfo)
 
       const importedModule = this.getModule(sourceFile)
       importedModule.addImportingModule(_module.file, identifier)
 
-      this.addExport(specifier.local.name, exportInfo)
+      this.addExport(localName, exportInfo)
     }
   }
   _addExportNamedDeclaration(

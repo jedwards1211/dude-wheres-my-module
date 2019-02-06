@@ -6,9 +6,11 @@ import findRoot from 'find-root'
 import path from 'path'
 import { eraseStartLine, cursorLeft } from 'ansi-escapes'
 import chalk from 'chalk'
+import tempFiles from './tempFiles'
+import fs from 'fs-extra'
 
 const projectRoot = findRoot(process.cwd())
-
+const files = tempFiles(projectRoot)
 const client = new Client(projectRoot)
 
 async function withStatus<T>(fn: () => Promise<T>): Promise<T> {
@@ -31,6 +33,10 @@ async function withStatus<T>(fn: () => Promise<T>): Promise<T> {
 async function run(): Promise<void> {
   try {
     switch (process.argv[2]) {
+      case 'log': {
+        console.log(await fs.readFile(files.log, 'utf8'))
+        break
+      }
       case 'stop': {
         console.error('Stopping server...')
         await client.stopServer()
@@ -63,10 +69,11 @@ async function run(): Promise<void> {
             process.stdin.on('end', () => resolve(chunks.join('')))
           })
         }
+        const isIdentifierRequest = /^[a-z_][a-z0-9_]*$/i.test(codeOrIdentifier)
 
-        const suggestions = await withStatus(() =>
+        let suggestions = await withStatus(() =>
           client.getSuggestedImports(
-            /^[a-z_][a-z0-9_]*$/i.test(codeOrIdentifier)
+            isIdentifierRequest
               ? {
                   identifier: codeOrIdentifier,
                   file,
@@ -77,6 +84,11 @@ async function run(): Promise<void> {
                 }
           )
         )
+
+        if (isIdentifierRequest) {
+          suggestions = suggestions[codeOrIdentifier].suggested
+        }
+
         if (Array.isArray(suggestions)) {
           for (let { code } of suggestions) {
             console.log(code)
