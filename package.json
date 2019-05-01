@@ -16,9 +16,9 @@
     "flow:watch": "flow-watch -e js,js.flow,flowconfig --ignore es/ --ignore node_modules/ --watch .flowconfig --watch src/ --watch test/",
     "clean": "rimraf es lib $(cd src; ls) *.js.flow",
     "build": "npm run clean && babel src --out-dir es --ignore '**/__tests__/**' && flow-copy-source -v src/ es --ignore '**/__tests__/**' && cross-env BABEL_ENV=es5 babel src --out-dir . --ignore '**/__tests__/**' && flow-copy-source -v src/ . --ignore '**/__tests__/**'",
-    "test": "cross-env NODE_ENV=production BABEL_ENV=es5 mocha $npm_package_config_mocha && cross-env NODE_ENV=production BABEL_ENV=coverage nyc --reporter=lcov --reporter=text mocha $npm_package_config_mocha",
-    "test:watch": "cross-env NODE_ENV=production BABEL_ENV=test mocha --watch $npm_package_config_mocha",
-    "test:debug": "cross-env NODE_ENV=production BABEL_ENV=test mocha --inspect-brk $npm_package_config_mocha",
+    "test": "cross-env NODE_ENV=production BABEL_ENV=es5 DWMM_TEST=1 mocha $npm_package_config_mocha && cross-env NODE_ENV=production BABEL_ENV=coverage DWMM_TEST=1 nyc --reporter=lcov --reporter=text mocha $npm_package_config_mocha",
+    "test:watch": "cross-env NODE_ENV=production BABEL_ENV=test DWMM_TEST=1 mocha --watch $npm_package_config_mocha",
+    "test:debug": "cross-env NODE_ENV=production BABEL_ENV=test DWMM_TEST=1 mocha --inspect-brk $npm_package_config_mocha",
     "codecov": "nyc report --reporter=text-lcov > coverage.lcov; codecov",
     "prepublishOnly": "npm run clean && npm run prettier:check && npm run lint && flow && npm test && npm run build",
     "open:coverage": "open coverage/lcov-report/index.html",
@@ -52,7 +52,7 @@
     "trailingComma": "es5"
   },
   "config": {
-    "mocha": "-r @babel/register test/configure.js test/**/*.js",
+    "mocha": "-r @babel/register test/configure.js src/__tests__/*.js src/**/__tests__/*.js",
     "commitizen": {
       "path": "cz-conventional-changelog"
     }
@@ -142,7 +142,8 @@
     "jscodeshift": "^0.5.1",
     "lockfile": "^1.0.4",
     "lodash": "^4.17.11",
-    "p-event": "^2.1.0"
+    "p-event": "^2.1.0",
+    "touch": "^3.1.0"
   },
   "renovate": {
     "extends": [

@@ -3,7 +3,7 @@
  * @prettier
  */
 
-import { describe, it } from 'mocha'
+import { describe, it, after } from 'mocha'
 import { expect } from 'chai'
 import Client from '../Client'
 import findRoot from 'find-root'
@@ -13,6 +13,11 @@ const client = new Client(projectRoot)
 
 describe(`Client`, function() {
   this.timeout(30000)
+
+  after(async function(): Promise<void> {
+    this.timeout(5000)
+    await client.close()
+  })
 
   it(`basic integration test`, async function(): Promise<void> {
     expect(

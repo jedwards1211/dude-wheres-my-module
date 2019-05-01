@@ -8,6 +8,7 @@ import type { Progress } from './WatchingIndexer'
 import JSONStream from 'JSONStream'
 import fs from 'fs-extra'
 import lockFile from 'lockfile'
+import touch from 'touch'
 import net from 'net'
 import tempFiles from './tempFiles'
 import { promisify } from 'util'
@@ -40,6 +41,12 @@ if (!fs.pathExistsSync(projectRoot)) {
 
 const files = tempFiles(projectRoot)
 
+fs.mkdirpSync(files.dir)
+try {
+  fs.unlinkSync(files.sock)
+} catch (error) {
+  // ignore
+}
 const logFile = fs.createWriteStream(files.log, 'utf8')
 stdout.pipe(logFile)
 stderr.pipe(logFile)
@@ -49,13 +56,22 @@ process.on('unhandledRejection', reason =>
   console.error((reason && reason.stack) || String(reason))
 )
 
-fs.mkdirpSync(files.dir)
 try {
-  lockFile.lockSync(files.lock)
+  lockFile.lockSync(files.lock, {
+    stale: 11000,
+  })
 } catch (err) {
-  console.error(`Another server is already running`, err.stack) // eslint-disable-line no-console
+  console.error(`Another server is already running`) // eslint-disable-line no-console
   process.exit(1)
 }
+
+setInterval(() => {
+  try {
+    touch.sync(files.lock)
+  } catch (error) {
+    console.error(error.stack) // eslint-disable-line no-console
+  }
+}, 10000)
 
 fs.writeFileSync(files.pids, `${process.pid}\tserver`, 'utf8')
 
@@ -76,10 +92,9 @@ indexer.on('error', error => console.error(error.stack)) // eslint-disable-line 
 
 async function cleanup(): Promise<void> {
   await Promise.all([
-    // promisify(cb => logFile.close(cb)),
-    fs.remove(files.lock),
-    fs.remove(files.sock),
-    fs.remove(files.pids),
+    fs.remove(files.lock).catch(() => {}),
+    fs.remove(files.sock).catch(() => {}),
+    fs.remove(files.pids).catch(() => {}),
   ])
 }
 
@@ -103,7 +118,7 @@ server.on('connection', (sock: net.Socket) => {
     }
     if (kill) {
       server.close()
-      cleanup()
+      await cleanup()
       process.exit(1)
     }
     if (getSuggestedImports) {

@@ -6,6 +6,7 @@ import net from 'net'
 import tempFiles from './tempFiles'
 import { spawn } from 'child_process'
 import { promisify } from 'util'
+import fs from 'fs-extra'
 import delay from 'delay'
 import stream from 'stream'
 import JSONStream from 'JSONStream'
@@ -52,11 +53,43 @@ export default class Client extends EventEmitter<Events> {
           resolve: (client: net.Socket) => any,
           reject: (error: Error) => any
         ) => {
-          let client
+          let client,
+            child,
+            rejected = false
+
+          const cleanup = () => {
+            if (client != null) {
+              client.removeListener('error', handleInitialError)
+              client.removeListener('error', handleFinalError)
+            }
+            if (child != null) {
+              child.removeListener('error', handleFinalError)
+              child.removeListener('exit', handleExit)
+            }
+          }
+
+          const handleExit = (code: ?number, signal: ?string) => {
+            rejected = true
+            cleanup()
+            reject(
+              new Error(
+                code
+                  ? `process exited with code ${code}`
+                  : signal
+                  ? `process was killed with ${signal}`
+                  : `process exited`
+              )
+            )
+          }
+
+          const handleFinalError = (error: Error) => {
+            rejected = true
+            cleanup()
+            reject(error)
+          }
 
           const handleConnect = () => {
-            client.removeListener('error', handleInitialError)
-            client.removeListener('error', reject)
+            cleanup()
             resolve(client)
           }
           const handleInitialError = async (error: Error): Promise<void> => {
@@ -64,12 +97,28 @@ export default class Client extends EventEmitter<Events> {
               reject(error)
               return
             }
-            spawn('node', [require.resolve('./Server'), this.projectRoot], {
-              detached: true,
-            })
-            await delay(3000)
-            client = net.createConnection(files.sock, handleConnect)
-            client.on('error', reject)
+            child = spawn(
+              process.env.DWMM_TEST ? 'babel-node' : process.execPath,
+              [require.resolve('./Server'), this.projectRoot],
+              {
+                detached: true,
+                stdio: 'ignore',
+              }
+            )
+            child.on('error', handleFinalError)
+            child.on('exit', handleExit)
+            const startTime = Date.now()
+            while (
+              !rejected &&
+              !(await fs.pathExists(files.sock).catch(() => false))
+            ) {
+              if (Date.now() - startTime > 10000) break
+              await delay(500)
+            }
+            if (!rejected) {
+              client = net.createConnection(files.sock, handleConnect)
+              client.on('error', handleFinalError)
+            }
           }
 
           client = net.createConnection(files.sock, handleConnect)

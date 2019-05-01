@@ -12,7 +12,11 @@ export default function tempFiles(
   log: string,
 } {
   const tmp = '/tmp'
-  const tempDir = path.join(tmp, 'dude-wheres-my-module')
+  const tempDir = path.join(
+    tmp,
+    'dude-wheres-my-module',
+    process.env.DWMM_TEST ? 'test' : ''
+  )
   const tempPrefix = path.join(tempDir, projectRoot.replace(/[/\\]/g, 'zS'))
   return {
     dir: tempDir,
