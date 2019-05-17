@@ -197,12 +197,12 @@ export default class ModuleIndex {
         const bModule = this.getModule(b.file)
         const aPreferred = aModule.isPreferred(identifier)
         const bPreferred = bModule.isPreferred(identifier)
-        if (aPreferred && !bPreferred) return 1
-        if (!aPreferred && bPreferred) return -1
+        if (aPreferred && !bPreferred) return -1
+        if (!aPreferred && bPreferred) return 1
 
         const numImportsDiff =
-          aModule.numImportingModules(identifier) -
-          bModule.numImportingModules(identifier)
+          bModule.numImportingModules(identifier) -
+          aModule.numImportingModules(identifier)
         if (numImportsDiff) return numImportsDiff
 
         const aNative = !path.isAbsolute(a.file)
@@ -211,14 +211,14 @@ export default class ModuleIndex {
         const bNodeModules = b.file.startsWith(this.nodeModulesDir)
         const aLocal = !aNative && !aNodeModules
         const bLocal = !bNative && !bNodeModules
-        if (aLocal && !bLocal) return 1
-        if (!aLocal && bLocal) return -1
-        if (aNodeModules && !bNodeModules) return 1
-        if (!aNodeModules && bNodeModules) return -1
-        if (aNative && !bNative) return 1
-        if (!aNative && bNative) return -1
-        if (a.file < b.file) return 1
-        if (a.file > b.file) return -1
+        if (aLocal && !bLocal) return -1
+        if (!aLocal && bLocal) return 1
+        if (aNodeModules && !bNodeModules) return -1
+        if (!aNodeModules && bNodeModules) return 1
+        if (aNative && !bNative) return -1
+        if (!aNative && bNative) return 1
+        if (a.file < b.file) return -1
+        if (a.file > b.file) return 1
         return 0
       }
     )
