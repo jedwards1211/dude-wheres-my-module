@@ -15,13 +15,16 @@ const client = new Client(projectRoot)
 
 async function withStatus<T>(fn: () => Promise<T>): Promise<T> {
   const handleProgress = ({ completed, total }) => {
-    process.stdout.write(
+    process.stderr.write(
       `${eraseStartLine}${cursorLeft}Server is starting... ${completed}/${total} (${Math.floor(
         (completed * 100) / total
       )}%)`
     )
   }
   client.on('progress', handleProgress)
+  client.on('starting', () => {
+    process.stderr.write('Server is starting...')
+  })
   try {
     return await fn()
   } finally {
@@ -94,7 +97,7 @@ async function run(): Promise<void> {
             console.log(code)
           }
           if (!suggestions.length) {
-            console.log(chalk.gray('no suggestions'))
+            console.error(chalk.gray('no suggestions'))
           }
         } else {
           for (let key in suggestions) {
@@ -114,11 +117,11 @@ async function run(): Promise<void> {
               console.log(`  ${code}`)
             }
             if (!suggested.length) {
-              console.log(chalk.gray(`  no suggestions`))
+              console.error(chalk.gray(`  no suggestions`))
             }
           }
           if (!Object.keys(suggestions).length) {
-            console.log(chalk.gray('no suggestions'))
+            console.error(chalk.gray('no suggestions'))
           }
         }
         break

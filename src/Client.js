@@ -23,6 +23,7 @@ export type Message = {
 type Events = {
   ready: [],
   progress: [Progress],
+  starting: [],
 }
 
 export default class Client extends EventEmitter<Events> {
@@ -97,12 +98,18 @@ export default class Client extends EventEmitter<Events> {
               reject(error)
               return
             }
+            this.emit('starting')
+            let command = process.env.DWMM_TEST
+              ? 'babel-node'
+              : process.execPath
+            if (!/node$/.test(command)) command = 'node'
             child = spawn(
-              process.env.DWMM_TEST ? 'babel-node' : process.execPath,
+              command,
               [require.resolve('./Server'), this.projectRoot],
               {
                 detached: true,
                 stdio: 'ignore',
+                cwd: this.projectRoot,
               }
             )
             child.on('error', handleFinalError)

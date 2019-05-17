@@ -36,7 +36,7 @@ if (!process.argv[2]) {
 const projectRoot = findRoot(process.argv[2])
 if (!fs.pathExistsSync(projectRoot)) {
   console.error(`Project dir doesn't exist: ${projectRoot}`) // eslint-disable-line no-console
-  process.exit(1)
+  process.exit(2)
 }
 
 const files = tempFiles(projectRoot)
@@ -57,15 +57,13 @@ process.on('unhandledRejection', reason =>
 )
 
 try {
-  lockFile.lockSync(files.lock, {
-    stale: 11000,
-  })
+  lockFile.lockSync(files.lock, { stale: 11000 })
 } catch (err) {
   console.error(`Another server is already running`) // eslint-disable-line no-console
-  process.exit(1)
+  process.exit(3)
 }
 
-setInterval(() => {
+const touchInterval = setInterval(() => {
   try {
     touch.sync(files.lock)
   } catch (error) {
@@ -87,20 +85,24 @@ const server = net
   .createServer()
   .listen(files.sock, () => console.log(`listening on ${files.sock}`)) // eslint-disable-line no-console
 
+const logError = error => console.error(error.stack) // eslint-disable-line no-console
+
 indexer.start()
-indexer.on('error', error => console.error(error.stack)) // eslint-disable-line no-console
+indexer.on('error', logError)
 
 async function cleanup(): Promise<void> {
+  clearInterval(touchInterval)
+  await lockFile.unlock(files.lock).catch(logError)
   await Promise.all([
-    fs.remove(files.lock).catch(() => {}),
-    fs.remove(files.sock).catch(() => {}),
-    fs.remove(files.pids).catch(() => {}),
+    fs.remove(files.lock).catch(logError),
+    fs.remove(files.sock).catch(logError),
+    fs.remove(files.pids).catch(logError),
   ])
 }
 
 async function handleSignal(): Promise<any> {
   await cleanup()
-  process.exit(1)
+  process.exit(4)
 }
 
 process.on('SIGINT', handleSignal)
@@ -119,7 +121,7 @@ server.on('connection', (sock: net.Socket) => {
     if (kill) {
       server.close()
       await cleanup()
-      process.exit(1)
+      process.exit(5)
     }
     if (getSuggestedImports) {
       await indexer.waitUntilReady()
