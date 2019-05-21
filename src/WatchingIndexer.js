@@ -13,6 +13,7 @@ import emitted from 'p-event'
 import throttle from 'lodash/throttle'
 import isConfigFile from './isConfigFile'
 import console from './console'
+import fs from 'fs-extra'
 
 export type Progress = { completed: number, total: number }
 
@@ -82,10 +83,14 @@ export default class WatchingIndexer extends EventEmitter<Events> {
           const code = Array.isArray(preferredImports)
             ? preferredImports.join('\n')
             : String(preferredImports)
-          this.index.declareModule(file, await this.parser.parse({ code }))
+          this.index.declareModule(
+            file,
+            await this.parser.parse({ code, file })
+          )
         }
       } else {
-        this.index.declareModule(file, await this.parser.parse({ file }))
+        const code = await fs.readFile(file, 'utf8')
+        this.index.declareModule(file, await this.parser.parse({ code, file }))
       }
     } catch (error) {
       this.emit('error', error)

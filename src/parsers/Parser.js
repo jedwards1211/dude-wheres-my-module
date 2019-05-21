@@ -6,12 +6,11 @@ import type {
   ExportDefaultDeclaration,
   ExportAllDeclaration,
   DeclareModule,
+  Kind,
 } from '../ASTTypes'
 
 export interface Parser {
-  parse(
-    {| file: string |} | {| code: string |}
-  ): Promise<
+  parse({ code: string, file?: string }): Promise<
     Iterable<
       | ImportDeclaration
       | ExportNamedDeclaration
@@ -21,7 +20,10 @@ export interface Parser {
     >
   >;
   importDeclaration(code: string): ImportDeclaration;
-  getUndefinedIdentifiers(code: string): Array<UndefinedIdentifier>;
+  getUndefinedIdentifiers({
+    code: string,
+    file?: string,
+  }): Array<UndefinedIdentifier>;
 }
 
 export type Location = {
@@ -34,4 +36,5 @@ export type UndefinedIdentifier = {
   start: Location,
   end: Location,
   context: string,
+  kind?: Kind,
 }

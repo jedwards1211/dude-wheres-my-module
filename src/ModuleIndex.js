@@ -38,8 +38,27 @@ type ExportInfo = $ReadOnly<{
   /**
    * The kind of export (value or type).
    */
-  kind: Kind,
+  kind: Kind | 'both',
 }>
+
+function addExport(
+  exports: Map<any, ExportInfo>,
+  key: any,
+  exportInfo: ExportInfo
+) {
+  const { kind } = exportInfo
+  const existing = exports.get(key)
+  if (!existing) {
+    exports.set(key, exportInfo)
+  } else if (
+    kind &&
+    existing.kind &&
+    existing.kind !== kind &&
+    existing.kind !== 'both'
+  ) {
+    exports.set(key, { ...exportInfo, kind: 'both' })
+  }
+}
 
 export class ModuleInfo {
   file: string
@@ -104,7 +123,7 @@ export class ModuleInfo {
   }
 
   addExport(exportInfo: ExportInfo) {
-    this.exports.set(exportInfo.identifier, exportInfo)
+    addExport(this.exports, exportInfo.identifier, exportInfo)
   }
 
   numImportingModules(identifier: string): number {
@@ -176,7 +195,7 @@ export default class ModuleIndex {
       moduleMap = new Map()
       this.identifiers.set(identifier, moduleMap)
     }
-    moduleMap.set(file, exportInfo)
+    addExport(moduleMap, file, exportInfo)
 
     if (local === exportInfo.identifier || local === identifier) return
 
@@ -185,7 +204,7 @@ export default class ModuleIndex {
       moduleMap = new Map()
       this.identifiers.set(local, moduleMap)
     }
-    moduleMap.set(file, exportInfo)
+    addExport(moduleMap, file, exportInfo)
   }
 
   getExports({ identifier, kind }: ExportsQuery): Array<ExportInfo> {
@@ -222,7 +241,7 @@ export default class ModuleIndex {
         return 0
       }
     )
-    if (kind) result = result.filter(e => e.kind === kind)
+    if (kind) result = result.filter(e => e.kind === kind || e.kind === 'both')
     return result
   }
 
@@ -254,7 +273,8 @@ export default class ModuleIndex {
         request = path.relative(path.dirname(file), request)
         if (!request.startsWith('.')) request = `./${request}`
       }
-      const kind = exportInfo.kind || 'value'
+      const kind =
+        (exportInfo.kind === 'both' ? query.kind : exportInfo.kind) || 'value'
       switch (exportInfo.identifier) {
         case NAMESPACE:
           return {
@@ -428,7 +448,7 @@ export default class ModuleIndex {
     exportDeclaration: ExportNamedDeclaration
   ) {
     const { specifiers, declaration } = exportDeclaration
-    const kind = exportDeclaration.exportKind || 'value'
+    let kind = exportDeclaration.exportKind || 'value'
     for (let specifier of specifiers) {
       let identifier
       switch (specifier.type) {
@@ -466,6 +486,9 @@ export default class ModuleIndex {
           identifier = declaration.id.name
           break
       }
+      if (declaration.type === 'ClassDeclaration') {
+        kind = 'both'
+      }
       if (identifier) {
         this.addExport(identifier, {
           file: _module.file,
@@ -477,12 +500,33 @@ export default class ModuleIndex {
   }
   _addExportDefaultDeclaration(
     _module: ModuleInfo,
-    declaration: ExportDefaultDeclaration
+    exportDeclaration: ExportDefaultDeclaration
   ) {
+    const { declaration } = exportDeclaration
+    if (declaration) {
+      switch (declaration.type) {
+        case 'ClassDeclaration':
+          this.addExport(declaration.id.name, {
+            file: _module.file,
+            identifier: 'default',
+            kind: 'both',
+          })
+          break
+        case 'FunctionDeclaration':
+          this.addExport(declaration.id.name, {
+            file: _module.file,
+            identifier: 'default',
+            kind: 'value',
+          })
+      }
+    }
     this.addExport('default', {
       file: _module.file,
       identifier: 'default',
-      kind: 'value',
+      kind:
+        declaration && declaration.type === 'ClassDeclaration'
+          ? 'both'
+          : 'value',
     })
   }
   _addExportAllDeclaration(
@@ -585,7 +629,7 @@ export default class ModuleIndex {
           }
           convertedDeclarations.push(convertedExportDeclaration)
         }
-        if (specifiers.length) {
+        if (specifiers && specifiers.length) {
           convertedDeclarations.push({
             type: 'ExportNamedDeclaration',
             declaration: null,

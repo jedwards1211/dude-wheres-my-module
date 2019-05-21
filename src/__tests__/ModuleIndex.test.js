@@ -6,6 +6,7 @@ import path from 'path'
 import { glob } from 'glob-gitignore'
 import { expect } from 'chai'
 import { describe, it } from 'mocha'
+import fs from 'fs-extra'
 
 describe('ModuleIndex', function() {
   this.timeout(30000)
@@ -19,11 +20,13 @@ describe('ModuleIndex', function() {
 
       for (let file of await glob('src/**/*.js', { cwd: projectRoot })) {
         file = path.resolve(projectRoot, file)
-        index.declareModule(file, await parser.parse({ file }))
+        const code = await fs.readFile(file, 'utf8')
+        index.declareModule(file, await parser.parse({ code, file }))
       }
       for (let file of await glob('test/**/*.js', { cwd: projectRoot })) {
         file = path.resolve(projectRoot, file)
-        index.declareModule(file, await parser.parse({ file }))
+        const code = await fs.readFile(file, 'utf8')
+        index.declareModule(file, await parser.parse({ code, file }))
       }
 
       expect(

@@ -16,6 +16,9 @@ import findRoot from 'find-root'
 import getSuggestedImportsFn from './getSuggestedImports'
 import console, { stdout, stderr } from './console'
 
+import BabelParser from './parsers/babel'
+import hasBabel from './hasBabel'
+
 export type SuggestedImportsQuery = {
   code?: ?string,
   identifier?: ?string,
@@ -73,7 +76,7 @@ const touchInterval = setInterval(() => {
 
 fs.writeFileSync(files.pids, `${process.pid}\tserver`, 'utf8')
 
-const parser = new FlowParser()
+const parser = hasBabel(projectRoot) ? new BabelParser() : new FlowParser()
 const index = new ModuleIndex({ projectRoot })
 const indexer = new WatchingIndexer({
   projectRoot,

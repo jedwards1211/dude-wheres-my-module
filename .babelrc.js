@@ -15,6 +15,7 @@ module.exports = function(api) {
         : { targets: { node: 'current' } },
     ],
     '@babel/preset-flow',
+    '@babel/preset-react',
   ]
 
   if (api.env(['test', 'coverage', 'es5'])) {

@@ -33,15 +33,15 @@ export default function getSuggestedImports({
   parser,
   index,
 }: $ReadOnly<SuggestedImportsQuery>): SuggestedImportsResult {
-  const undefinedIdentifiers = parser.getUndefinedIdentifiers(code)
+  const undefinedIdentifiers = parser.getUndefinedIdentifiers({ code, file })
 
   const result = {}
   for (let undefinedIdentifier of undefinedIdentifiers) {
-    const { identifier } = undefinedIdentifier
+    const { identifier, kind } = undefinedIdentifier
     result[identifier] = {
       ...undefinedIdentifier,
       suggested: index
-        .getSuggestedImports({ identifier, file })
+        .getSuggestedImports({ identifier, file, kind })
         .map(suggested => ({
           ...suggested,
           ast: parser.importDeclaration(suggested.code),

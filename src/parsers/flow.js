@@ -7,7 +7,6 @@ import type {
   ExportAllDeclaration,
   DeclareModule,
 } from '../ASTTypes'
-import { readFile } from 'fs-extra'
 import { parse } from 'flow-parser'
 import type { Parser, UndefinedIdentifier } from './Parser'
 import jscodeshift from 'jscodeshift'
@@ -56,7 +55,12 @@ export default class FlowParser implements Parser {
     }
     return ast
   }
-  getUndefinedIdentifiers(code: string): Array<UndefinedIdentifier> {
+  getUndefinedIdentifiers({
+    code,
+  }: {
+    code: string,
+    file?: string,
+  }): Array<UndefinedIdentifier> {
     const lines = code.split(/\r\n?|\n/gm)
     const root = j(code)
 
@@ -197,20 +201,33 @@ export default class FlowParser implements Parser {
 
         return node.loc && node.loc.start && node.loc.start.line != null
       })
-      .nodes()
-      .map((node: Object) => {
+      .paths()
+      .map((path: NodePath) => {
         const {
-          name: identifier,
-          loc: { start, end },
-        } = node
-        return { identifier, start, end, context: lines[start.line - 1] }
+          node: {
+            name: identifier,
+            loc: { start, end },
+          },
+          parent: parentPath,
+        } = path
+        return {
+          identifier,
+          start,
+          end,
+          context: lines[start.line - 1],
+          kind:
+            parentPath && parentPath.node.type === 'GenericTypeAnnotation'
+              ? 'type'
+              : 'value',
+        }
       })
     return sortBy(uniqBy(identifiers, i => i.identifier), i => i.identifier)
   }
 
-  async parse(
-    options: {| file: string |} | {| code: string |}
-  ): Promise<
+  async parse(options: {
+    code: string,
+    file?: string,
+  }): Promise<
     Iterable<
       | ImportDeclaration
       | ExportNamedDeclaration
@@ -219,9 +236,7 @@ export default class FlowParser implements Parser {
       | DeclareModule
     >
   > {
-    const code = options.file
-      ? await readFile(options.file, 'utf8')
-      : options.code || ''
+    const { code } = options
 
     const ast = parse(code, {
       esproposal_decorators: true,
