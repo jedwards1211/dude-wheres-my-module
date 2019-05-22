@@ -89,6 +89,8 @@ export default class BabelParser implements Parser {
           case 'OpaqueType':
             return
           case 'MemberExpression':
+            if (parent.property === node && !parent.computed) return false
+            break
           case 'ExportSpecifier':
           case 'ExportNamespaceSpecifier':
             if (parentPath.parent && parentPath.parent.source) return

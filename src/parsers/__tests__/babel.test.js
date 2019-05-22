@@ -13,6 +13,16 @@ const testFile = path.join(__dirname, '__test.js')
 
 describe(`BabelParser`, function() {
   describe(`getUndefinedIdentifiers`, function() {
+    it(`member call expression issue`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        process.stderr.write('test')
+      `,
+        file: testFile,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
     it(`uninitialized declarator issue`, function() {
       const parser = new BabelParser()
       const found = parser.getUndefinedIdentifiers({
