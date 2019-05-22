@@ -20,6 +20,7 @@ export type Progress = { completed: number, total: number }
 type Events = {
   ready: [],
   progress: [Progress],
+  processFileError: [Error],
   error: [Error],
 }
 
@@ -93,7 +94,7 @@ export default class WatchingIndexer extends EventEmitter<Events> {
         this.index.declareModule(file, await this.parser.parse({ code, file }))
       }
     } catch (error) {
-      this.emit('error', error)
+      this.emit('processFileError', error)
       this.allFiles.delete(file)
     } finally {
       this.deletePendingFile(file)

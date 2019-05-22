@@ -95,7 +95,11 @@ indexer.on('error', logError)
 
 async function cleanup(): Promise<void> {
   clearInterval(touchInterval)
-  await lockFile.unlock(files.lock).catch(logError)
+  try {
+    lockFile.unlockSync(files.lock)
+  } catch (error) {
+    console.error(error.stack)
+  }
   await Promise.all([
     fs.remove(files.lock).catch(logError),
     fs.remove(files.sock).catch(logError),
@@ -127,10 +131,10 @@ server.on('connection', (sock: net.Socket) => {
       process.exit(5)
     }
     if (getSuggestedImports) {
-      await indexer.waitUntilReady()
       let message
       const { file, code, identifier } = getSuggestedImports
       try {
+        await indexer.waitUntilReady()
         let result
         if (code) {
           result = getSuggestedImportsFn({

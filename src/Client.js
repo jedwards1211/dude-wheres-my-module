@@ -32,7 +32,10 @@ export default class Client extends EventEmitter<Events> {
   seq: number = 0
   instream: stream.Transform
   outstream: stream.Transform
-  callbacks: Map<number, (result: any) => any> = new Map()
+  callbacks: Map<
+    number,
+    { resolve: any => any, reject: Error => any }
+  > = new Map()
 
   constructor(projectRoot: string) {
     super()
@@ -138,13 +141,19 @@ export default class Client extends EventEmitter<Events> {
 
       this.instream.on(
         'data',
-        (message: { seq?: number, progress?: Progress, ready?: boolean }) => {
-          const { seq, progress, ready } = message
+        (message: {
+          seq?: number,
+          progress?: Progress,
+          ready?: boolean,
+          error?: string,
+        }) => {
+          const { seq, progress, ready, error } = message
           if (seq != null) {
-            const callback = this.callbacks.get(seq)
-            if (callback) {
+            const callbacks = this.callbacks.get(seq)
+            if (callbacks) {
               this.callbacks.delete(seq)
-              callback(message)
+              if (error) callbacks.reject(new Error(error))
+              else callbacks.resolve(message)
             }
           }
           if (progress) this.emit('progress', progress)
@@ -174,7 +183,7 @@ export default class Client extends EventEmitter<Events> {
           reject(error)
         }
 
-        this.callbacks.set(seq, handleResult)
+        this.callbacks.set(seq, { resolve: handleResult, reject: handleError })
         client.on('error', handleError)
         // $FlowFixMe
         this.outstream.write({ seq, ...message })
