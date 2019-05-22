@@ -1,5 +1,4 @@
 /**
- * @babel
  * @prettier
  */
 
@@ -12,6 +11,23 @@ import path from 'path'
 const testFile = path.join(__dirname, '__test.js')
 
 describe(`BabelParser`, function() {
+  describe(`getMode`, function() {
+    it(`defaults to require`, function() {
+      const parser = new BabelParser()
+      expect(parser.getMode({ code: '' })).to.equal('require')
+    })
+    it(`returns import if any flow annotation is found`, function() {
+      const parser = new BabelParser()
+      expect(parser.getMode({ code: '// @flow' })).to.equal('import')
+      expect(parser.getMode({ code: '/* @flow */' })).to.equal('import')
+    })
+    it(`returns import if any import statement is found`, function() {
+      const parser = new BabelParser()
+      expect(parser.getMode({ code: `import foo from 'foo'` })).to.equal(
+        'import'
+      )
+    })
+  })
   describe(`getUndefinedIdentifiers`, function() {
     it(`member call expression issue`, function() {
       const parser = new BabelParser()

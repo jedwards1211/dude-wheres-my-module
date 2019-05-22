@@ -7,9 +7,11 @@ import type {
   ExportAllDeclaration,
   DeclareModule,
   Kind,
+  VariableDeclaration,
 } from '../ASTTypes'
 
 export interface Parser {
+  getMode({ code: string, file?: string }): 'import' | 'require';
   parse({ code: string, file?: string }): Promise<
     Iterable<
       | ImportDeclaration
@@ -20,6 +22,7 @@ export interface Parser {
     >
   >;
   importDeclaration(code: string): ImportDeclaration;
+  requireDeclaration(code: string): VariableDeclaration;
   getUndefinedIdentifiers({
     code: string,
     file?: string,

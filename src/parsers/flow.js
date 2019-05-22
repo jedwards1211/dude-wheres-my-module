@@ -16,6 +16,8 @@ import builtinIdentifiers from '../util/builtinIdentifiers'
 
 import convertRequiresToImports from './convertRequiresToImports'
 
+import { type VariableDeclaration } from '../ASTTypes'
+
 const j = jscodeshift.withParser('flow')
 
 type Node = Object
@@ -48,6 +50,40 @@ const typeParameterScopeTypes = [
 const TypeParameterScopeType = Type.or.apply(Type, typeParameterScopeTypes)
 
 export default class FlowParser implements Parser {
+  getMode({ code }: { code: string, file?: string }): 'import' | 'require' {
+    const ast = parse(code, {
+      esproposal_decorators: true,
+      esproposal_class_instance_fields: true,
+      esproposal_class_static_fields: true,
+      esproposal_export_star_as: true,
+      esproposal_optional_chaining: true,
+      esproposal_nullish_coalescing: true,
+    })
+
+    const { body, comments } = ast
+    if (comments) {
+      for (let comment of comments) {
+        if (/@flow/.test(comment.value)) {
+          return 'import'
+        }
+      }
+    }
+
+    if (Array.isArray(body)) {
+      for (let s of body) {
+        if (s.type === 'ImportDeclaration') return 'import'
+      }
+    }
+
+    return 'require'
+  }
+  requireDeclaration(code: string): VariableDeclaration {
+    const ast = j.template.statement([code])
+    if (ast.type !== 'VariableDeclaration') {
+      throw new Error(`not a variable declaration: ${code}`)
+    }
+    return ast
+  }
   importDeclaration(code: string): ImportDeclaration {
     const ast = j.template.statement([code])
     if (ast.type !== 'ImportDeclaration') {

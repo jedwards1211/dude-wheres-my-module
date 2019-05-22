@@ -10,6 +10,23 @@ import recast from 'recast'
 import FlowParser from '../flow'
 
 describe(`FlowParser`, function() {
+  describe(`getMode`, function() {
+    it(`defaults to require`, function() {
+      const parser = new FlowParser()
+      expect(parser.getMode({ code: '' })).to.equal('require')
+    })
+    it(`returns import if any flow annotation is found`, function() {
+      const parser = new FlowParser()
+      expect(parser.getMode({ code: '// @flow' })).to.equal('import')
+      expect(parser.getMode({ code: '/* @flow */' })).to.equal('import')
+    })
+    it(`returns import if any import statement is found`, function() {
+      const parser = new FlowParser()
+      expect(parser.getMode({ code: `import foo from 'foo'` })).to.equal(
+        'import'
+      )
+    })
+  })
   describe(`getUndefinedIdentifiers`, function() {
     it(`uninitialized declarator issue`, function() {
       const parser = new FlowParser()

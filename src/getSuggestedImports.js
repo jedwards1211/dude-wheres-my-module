@@ -41,10 +41,17 @@ export default function getSuggestedImports({
     result[identifier] = {
       ...undefinedIdentifier,
       suggested: index
-        .getSuggestedImports({ identifier, file, kind })
+        .getSuggestedImports({
+          identifier,
+          file,
+          kind,
+          mode: parser.getMode({ code, file }),
+        })
         .map(suggested => ({
           ...suggested,
-          ast: parser.importDeclaration(suggested.code),
+          ast: suggested.code.startsWith('import')
+            ? parser.importDeclaration(suggested.code)
+            : parser.requireDeclaration(suggested.code),
         })),
     }
   }

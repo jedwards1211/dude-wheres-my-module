@@ -151,6 +151,7 @@ export type ExportsQuery = {
 }
 export type SuggestedImportsQuery = ExportsQuery & {
   file: string,
+  mode?: 'import' | 'require',
 }
 export type SuggestedImportResult = {
   code: string,
@@ -247,6 +248,7 @@ export default class ModuleIndex {
 
   getSuggestedImports({
     file,
+    mode,
     ...query
   }: SuggestedImportsQuery): Array<SuggestedImportResult> {
     const { identifier } = query
@@ -275,20 +277,38 @@ export default class ModuleIndex {
       }
       const kind =
         (exportInfo.kind === 'both' ? query.kind : exportInfo.kind) || 'value'
+      console.log({ kind, mode })
       switch (exportInfo.identifier) {
         case NAMESPACE:
+          if (kind === 'value' && mode === 'require') {
+            return {
+              code: `const ${identifier} = require("${request}")`,
+            }
+          }
           return {
             code: `import ${
               kind === 'type' ? 'type ' : ''
             }* as ${identifier} from "${request}"`,
           }
         case 'default':
+          if (kind === 'value' && mode === 'require') {
+            return {
+              code: `const ${identifier} = require("${request}")`,
+            }
+          }
           return {
             code: `import ${
               kind === 'type' ? 'type ' : ''
             }${identifier} from "${request}"`,
           }
         default:
+          if (kind === 'value' && mode === 'require') {
+            return {
+              code: `const {${String(exportInfo.identifier)}${
+                identifier === exportInfo.identifier ? '' : ` as ${identifier}`
+              }} = require("${request}")`,
+            }
+          }
           return {
             code: `import { ${kind === 'type' ? 'type ' : ''}${String(
               exportInfo.identifier

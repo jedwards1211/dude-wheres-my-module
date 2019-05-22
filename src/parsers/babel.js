@@ -15,6 +15,7 @@ import builtinIdentifiers from '../util/builtinIdentifiers'
 import babelConvertRequiresToImports from './babelConvertRequiresToImports'
 
 import findRoot from 'find-root'
+import { type VariableDeclaration } from '../ASTTypes'
 const j = jscodeshift.withParser('babylon')
 
 type Node = Object
@@ -37,6 +38,52 @@ type NodePath = {
 }
 
 export default class BabelParser implements Parser {
+  getMode({
+    code,
+    file,
+  }: {
+    code: string,
+    file?: string,
+  }): 'import' | 'require' {
+    const projectDirectory = findRoot(file)
+
+    // $FlowFixMe
+    const babel = require(require.resolve('@babel/core', {
+      paths: [projectDirectory],
+    }))
+
+    const ast = babel.parse(code, {
+      cwd: projectDirectory,
+      filename: file,
+    })
+
+    const { comments, program } = ast
+    if (comments) {
+      for (let comment of comments) {
+        if (/@flow/.test(comment.value)) {
+          return 'import'
+        }
+      }
+    }
+
+    if (program) {
+      const { body } = program
+      if (Array.isArray(body)) {
+        for (let s of body) {
+          if (s.type === 'ImportDeclaration') return 'import'
+        }
+      }
+    }
+
+    return 'require'
+  }
+  requireDeclaration(code: string): VariableDeclaration {
+    const ast = j.template.statement([code])
+    if (ast.type !== 'VariableDeclaration') {
+      throw new Error(`not a variable declaration: ${code}`)
+    }
+    return ast
+  }
   importDeclaration(code: string): ImportDeclaration {
     const ast = j.template.statement([code])
     if (ast.type !== 'ImportDeclaration') {
