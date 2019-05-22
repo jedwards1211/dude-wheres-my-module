@@ -56,7 +56,7 @@ describe('ModuleIndex', function() {
         {
           file: require.resolve('../ModuleIndex'),
           identifier: 'default',
-          kind: 'value',
+          kind: 'both',
         },
       ])
 
@@ -72,7 +72,7 @@ describe('ModuleIndex', function() {
         {
           file: require.resolve('../ModuleIndex'),
           identifier: 'ModuleInfo',
-          kind: 'value',
+          kind: 'both',
         },
       ])
     })
