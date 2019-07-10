@@ -288,6 +288,18 @@ describe(`BabelParser`, function() {
       })
       expect(found).to.have.lengthOf(0)
     })
+    it(`ObjectMethod issue`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        const foo = {
+          bar() {}
+        }
+      `,
+        file: testFile,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
   })
   describe(`parse`, function() {
     async function parse({ code }) {

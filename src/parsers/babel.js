@@ -150,6 +150,9 @@ export default class BabelParser implements Parser {
           case 'VariableDeclarator':
             if (parent.id === node) return
             break
+          case 'ObjectMethod':
+            if (parent.key === node) return
+            break
           case 'ObjectTypeProperty':
           case 'ClassProperty':
           case 'MethodDefinition':

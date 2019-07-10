@@ -256,6 +256,17 @@ describe(`FlowParser`, function() {
       })
       expect(found).to.have.lengthOf(0)
     })
+    it(`ObjectMethod issue`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        const foo = {
+          bar() {}
+        }
+      `,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
   })
   describe(`parse`, function() {
     it(`ignores shadowed require calls`, async function(): Promise<void> {
