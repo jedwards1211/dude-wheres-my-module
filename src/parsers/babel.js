@@ -151,7 +151,8 @@ export default class BabelParser implements Parser {
             if (parent.id === node) return
             break
           case 'ObjectMethod':
-            if (parent.key === node) return
+          case 'ClassMethod':
+            if (parent.key === node && !parent.computed) return
             break
           case 'ObjectTypeProperty':
           case 'ClassProperty':

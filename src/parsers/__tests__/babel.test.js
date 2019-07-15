@@ -300,6 +300,42 @@ describe(`BabelParser`, function() {
       })
       expect(found).to.have.lengthOf(0)
     })
+    it(`Computed ObjectMethod`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        const foo = {
+          [bar]() {}
+        }
+      `,
+        file: testFile,
+      })
+      expect(found).to.have.lengthOf(1)
+    })
+    it(`ClassMethod issue`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        class Foo {
+          bar() {}
+        }
+      `,
+        file: testFile,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
+    it(`Computed ClassMethod`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        class Foo {
+          [bar]() {}
+        }
+      `,
+        file: testFile,
+      })
+      expect(found).to.have.lengthOf(1)
+    })
   })
   describe(`parse`, function() {
     async function parse({ code }) {
