@@ -29,7 +29,7 @@ describe(`Client`, function() {
       Client: {
         identifier: 'Client',
         context: 'const client = new Client(__filename)',
-        suggested: [{ code: 'import Client from "../Client"' }],
+        suggested: [{ code: 'const Client = require("../Client")' }],
       },
     })
     expect(
