@@ -277,7 +277,6 @@ export default class ModuleIndex {
       }
       const kind =
         (exportInfo.kind === 'both' ? query.kind : exportInfo.kind) || 'value'
-      console.log({ kind, mode })
       switch (exportInfo.identifier) {
         case NAMESPACE:
           if (kind === 'value' && mode === 'require') {
