@@ -9,6 +9,10 @@ import chalk from 'chalk'
 import tempFiles from './tempFiles'
 import fs from 'fs-extra'
 
+import { spawn } from 'child_process'
+
+import emitted from 'p-event'
+
 const projectRoot = findRoot(process.cwd())
 const files = tempFiles(projectRoot)
 const client = new Client(projectRoot)
@@ -37,7 +41,24 @@ async function run(): Promise<void> {
   try {
     switch (process.argv[2]) {
       case 'log': {
-        console.log(await fs.readFile(files.log, 'utf8'))
+        if (process.argv.includes('-f')) {
+          spawn('tail', [...process.argv.slice(3), files.log], {
+            stdio: 'inherit',
+          })
+          await new Promise(() => {})
+        }
+        const stream = fs.createReadStream(files.log, 'utf8')
+        stream.pipe(process.stdout)
+        await emitted(stream, 'end')
+        break
+      }
+      case 'errors': {
+        const log = await fs.readFile(files.log, 'utf8')
+        const rx = /^.*?error:.*$/gim
+        let match
+        while ((match = rx.exec(log))) {
+          console.log(match[0])
+        }
         break
       }
       case 'stop': {
