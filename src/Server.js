@@ -86,7 +86,7 @@ const indexer = new WatchingIndexer({
 
 const server = net
   .createServer()
-  .listen(files.sock, () => console.log(`listening on ${files.sock}`)) // eslint-disable-line no-console
+  .listen(files.sock, () => console.error('[dwmm] listening on', files.sock)) // eslint-disable-line no-console
 
 const logError = error => console.error(error.stack) // eslint-disable-line no-console
 
@@ -96,10 +96,12 @@ indexer.on('error', logError)
 async function cleanup(): Promise<void> {
   clearInterval(touchInterval)
   try {
+    console.error('[dwmm]', 'unlocking', files.lock)
     lockFile.unlockSync(files.lock)
   } catch (error) {
     console.error(error.stack)
   }
+  console.error('[dwmm]', 'removing', files.lock, files.sock, files.pids)
   await Promise.all([
     fs.remove(files.lock).catch(logError),
     fs.remove(files.sock).catch(logError),
@@ -107,7 +109,8 @@ async function cleanup(): Promise<void> {
   ])
 }
 
-async function handleSignal(): Promise<any> {
+async function handleSignal(signal: any): Promise<any> {
+  console.error('[dwmm]', 'got signal:', signal)
   await cleanup()
   process.exit(4)
 }
@@ -121,11 +124,13 @@ server.on('connection', (sock: net.Socket) => {
   instream.on('data', async (message: Message) => {
     const { seq, getSuggestedImports, stop, kill } = message
     if (stop) {
+      console.error('[dwmm]', 'got stop request')
       await promisify(cb => server.close(cb))()
       await cleanup()
       process.exit(0)
     }
     if (kill) {
+      console.error('[dwmm]', 'got kill request')
       server.close()
       await cleanup()
       process.exit(5)
