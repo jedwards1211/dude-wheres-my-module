@@ -38,21 +38,26 @@ export default function getSuggestedImports({
   const result = {}
   for (let undefinedIdentifier of undefinedIdentifiers) {
     const { identifier, kind } = undefinedIdentifier
-    result[identifier] = {
-      ...undefinedIdentifier,
-      suggested: index
-        .getSuggestedImports({
-          identifier,
-          file,
-          kind,
-          mode: parser.getMode({ code, file }),
-        })
-        .map(suggested => ({
-          ...suggested,
-          ast: suggested.code.startsWith('import')
-            ? parser.importDeclaration(suggested.code)
-            : parser.requireDeclaration(suggested.code),
-        })),
+    const suggested = index
+      .getSuggestedImports({
+        identifier,
+        file,
+        kind,
+        mode: parser.getMode({ code, file }),
+      })
+      .map(suggested => ({
+        ...suggested,
+        ast: suggested.code.startsWith('import')
+          ? parser.importDeclaration(suggested.code)
+          : parser.requireDeclaration(suggested.code),
+      }))
+    if (result[identifier]) {
+      suggested.forEach(s => result[identifier].suggested.push(s))
+    } else {
+      result[identifier] = {
+        ...undefinedIdentifier,
+        suggested,
+      }
     }
   }
   return result

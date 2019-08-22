@@ -31,10 +31,10 @@ describe('ModuleIndex', function() {
 
       expect(
         index.getSuggestedImports({
-          identifier: 'sortBy',
+          identifier: 'uniqBy',
           file: require.resolve('../parsers/flow'),
         })
-      ).to.containSubset([{ code: 'import { sortBy } from "lodash"' }])
+      ).to.containSubset([{ code: 'import { uniqBy } from "lodash"' }])
 
       expect(
         index.getSuggestedImports({

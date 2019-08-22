@@ -10,7 +10,7 @@ import type {
 import { parse } from 'flow-parser'
 import type { Parser, UndefinedIdentifier } from './Parser'
 import jscodeshift from 'jscodeshift'
-import { sortBy, uniqBy } from 'lodash'
+import { uniqBy } from 'lodash'
 import { namedTypes, Type } from 'ast-types'
 import builtinIdentifiers from '../util/builtinIdentifiers'
 
@@ -252,12 +252,15 @@ export default class FlowParser implements Parser {
           end,
           context: lines[start.line - 1],
           kind:
-            parentPath && parentPath.node.type === 'GenericTypeAnnotation'
+            parentPath &&
+            parentPath.node.type === 'GenericTypeAnnotation' &&
+            (parentPath.parent && parentPath.parent.node.type) !==
+              'TypeofTypeAnnotation'
               ? 'type'
               : 'value',
         }
       })
-    return sortBy(uniqBy(identifiers, i => i.identifier), i => i.identifier)
+    return uniqBy(identifiers, i => JSON.stringify([i.identifier, i.kind]))
   }
 
   async parse(options: {

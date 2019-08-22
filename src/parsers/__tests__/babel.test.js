@@ -336,6 +336,46 @@ describe(`BabelParser`, function() {
       })
       expect(found).to.have.lengthOf(1)
     })
+    it(`typeof issue?`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        /**
+         * @flow
+         * @prettier
+         */
+
+        import * as React from 'react'
+        import List from '@material-ui/core/List'
+
+        export type Props = {
+          children: React.Node,
+          ListItemProps?: ?React.ElementConfig<typeof ListItem>,
+          ListItemTextProps?: ?React.ElementConfig<typeof ListItemText>,
+        }
+
+        const ListWithOneStatusItem = ({
+          children,
+          ListItemProps,
+          ListItemTextProps,
+          ...props
+        }: Props): React.Node => (
+          <List {...props}>
+            <ListItem {...ListItemProps}>
+              <ListItemText {...ListItemTextProps}>{children}</ListItemText>
+            </ListItem>
+          </List>
+        )
+
+        export default ListWithOneStatusItem
+      `,
+        file: testFile,
+      })
+      expect(found).to.containSubset([
+        { identifier: 'ListItem', kind: 'value' },
+        { identifier: 'ListItemText', kind: 'value' },
+      ])
+    })
   })
   describe(`parse`, function() {
     async function parse({ code }) {

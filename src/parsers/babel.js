@@ -9,7 +9,7 @@ import type {
 } from '../ASTTypes'
 import type { Parser, UndefinedIdentifier } from './Parser'
 import jscodeshift from 'jscodeshift'
-import { sortBy, uniqBy } from 'lodash'
+import { uniqBy } from 'lodash'
 import builtinIdentifiers from '../util/builtinIdentifiers'
 
 import babelConvertRequiresToImports from './babelConvertRequiresToImports'
@@ -184,7 +184,12 @@ export default class BabelParser implements Parser {
             start,
             end,
             context: lines[start.line - 1],
-            kind: parent.type === 'GenericTypeAnnotation' ? 'type' : 'value',
+            kind:
+              parent.type === 'GenericTypeAnnotation' &&
+              (parentPath.parent && parentPath.parent.type) !==
+                'TypeofTypeAnnotation'
+                ? 'type'
+                : 'value',
           })
         }
       },
@@ -221,7 +226,7 @@ export default class BabelParser implements Parser {
         }
       },
     })
-    return sortBy(uniqBy(identifiers, i => i.identifier), i => i.identifier)
+    return uniqBy(identifiers, i => JSON.stringify([i.identifier, i.kind]))
   }
 
   async parse({
