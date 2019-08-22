@@ -119,20 +119,30 @@ async function handleSignal(signal: any): Promise<any> {
 process.on('SIGINT', handleSignal)
 process.on('SIGTERM', handleSignal)
 
+const sockets: Set<net.Socket> = new Set()
+
+async function destroyServer(): Promise<void> {
+  for (const sock of sockets) sock.destroy()
+  sockets.clear()
+  await promisify(cb => server.close(cb))
+}
+
 server.on('connection', (sock: net.Socket) => {
+  sockets.add(sock)
+  sock.on('close', () => sockets.delete(sock))
   const instream = JSONStream.parse('*')
   const outstream = JSONStream.stringify()
   instream.on('data', async (message: Message) => {
     const { seq, getSuggestedImports, stop, kill } = message
     if (stop) {
       console.error('[dwmm]', 'got stop request')
-      await promisify(cb => server.close(cb))()
+      await destroyServer()
       await cleanup()
       process.exit(0)
     }
     if (kill) {
       console.error('[dwmm]', 'got kill request')
-      server.close()
+      destroyServer()
       await cleanup()
       process.exit(5)
     }
