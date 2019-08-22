@@ -2,6 +2,7 @@
 /* eslint-disable no-console */
 
 import './checkNodeVersion'
+import yargs from 'yargs'
 import Client from './Client'
 import findRoot from 'find-root'
 import path from 'path'
@@ -38,126 +39,166 @@ async function withStatus<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-async function run(): Promise<void> {
+const shellCommand = path.isAbsolute(process.argv[1])
+  ? path.basename(process.argv[1])
+  : `${path.basename(process.argv[0])} ${process.argv[1]}`
+
+const runCommand = (fn: (argv: Object) => Promise<any>) => async (
+  argv: Object
+): Promise<any> => {
   try {
-    switch (process.argv[2]) {
-      case 'log': {
-        if (process.argv.includes('-f')) {
-          spawn('tail', [...process.argv.slice(3), files.log], {
-            stdio: 'inherit',
-          })
-          await new Promise(() => {})
-        }
-        const stream = fs.createReadStream(files.log, 'utf8')
-        stream.pipe(process.stdout)
-        await emitted(stream, 'end')
-        break
-      }
-      case 'errors': {
-        const log = await fs.readFile(files.log, 'utf8')
-        const rx = /^.*?error:.*$/gim
-        let match
-        while ((match = rx.exec(log))) {
-          console.log(match[0])
-        }
-        break
-      }
-      case 'stop': {
-        console.error('Stopping server...')
-        await client.stopServer()
-        console.error('Stopped server')
-        break
-      }
-      case 'stahp':
-      case 'kill': {
-        console.error('Killing server...')
-        await client.killServer()
-        console.error('Killed server')
-        break
-      }
-      case 'wheres':
-      case "where's":
-      case 'suggest': {
-        const argIndex = process.argv.indexOf('--file')
-        const file =
-          argIndex > 0
-            ? path.resolve(projectRoot, process.argv[argIndex + 1])
-            : path.join(projectRoot, 'index.js')
-        if (argIndex > 0) process.argv.splice(argIndex, 2)
-
-        let codeOrIdentifier = process.argv[3]
-        if (!codeOrIdentifier) {
-          codeOrIdentifier = await new Promise((resolve, reject) => {
-            process.stdin.on('error', reject)
-            const chunks = []
-            process.stdin.on('data', data => chunks.push(data.toString('utf8')))
-            process.stdin.on('end', () => resolve(chunks.join('')))
-          })
-        }
-        const isIdentifierRequest = /^[a-z_][a-z0-9_]*$/i.test(codeOrIdentifier)
-
-        let suggestions = await withStatus(() =>
-          client.getSuggestedImports(
-            isIdentifierRequest
-              ? {
-                  identifier: codeOrIdentifier,
-                  file,
-                }
-              : {
-                  code: codeOrIdentifier,
-                  file,
-                }
-          )
-        )
-
-        if (isIdentifierRequest) {
-          suggestions = suggestions[codeOrIdentifier].suggested
-        }
-
-        if (Array.isArray(suggestions)) {
-          for (let { code } of suggestions) {
-            console.log(code)
-          }
-          if (!suggestions.length) {
-            console.error(chalk.gray('no suggestions'))
-          }
-        } else {
-          for (let key in suggestions) {
-            const { identifier, start, end, context, suggested } = suggestions[
-              key
-            ]
-            console.log(
-              `${chalk.bold(identifier)} (${start.line}:${
-                start.column
-              }) ${chalk.italic(
-                `${context.substring(0, start.column)}${chalk.bold(
-                  context.substring(start.column, end.column)
-                )}${context.substring(end.column)}`
-              )}`
-            )
-            for (let { code } of suggested) {
-              console.log(`  ${code}`)
-            }
-            if (!suggested.length) {
-              console.error(chalk.gray(`  no suggestions`))
-            }
-          }
-          if (!Object.keys(suggestions).length) {
-            console.error(chalk.gray('no suggestions'))
-          }
-        }
-        break
-      }
-    }
+    await fn(argv)
+  } catch (error) {
+    console.error(error.stack) // eslint-disable-line no-console
+    process.exit(1)
   } finally {
     await client.close()
   }
+  process.exit(0)
 }
 
-run().then(
-  () => process.exit(0),
-  (err: Error) => {
-    console.error(err.stack) // eslint-disable-line no-console
-    process.exit(1)
-  }
-)
+yargs
+  .command(
+    'log',
+    'output log file',
+    function(yargs) {
+      yargs.usage('$0 log [-f [<tail options>]]').option('f', {
+        alias: 'follow',
+        type: 'boolean',
+        describe: 'follow tail of log file',
+      })
+    },
+    runCommand(async function(argv): Promise<void> {
+      const { follow, _ } = argv
+      if (follow) {
+        spawn('tail', ['-f', ..._, files.log], {
+          stdio: 'inherit',
+        })
+        await new Promise(() => {})
+      }
+      const stream = fs.createReadStream(files.log, 'utf8')
+      stream.pipe(process.stdout)
+      await emitted(stream, 'end')
+    })
+  )
+  .command(
+    'errors',
+    'output errors from log file',
+    runCommand(async function(argv): Promise<void> {
+      const log = await fs.readFile(files.log, 'utf8')
+      const rx = /^.*?error:.*$/gim
+      let match
+      while ((match = rx.exec(log))) {
+        console.log(match[0])
+      }
+    })
+  )
+  .command(
+    'stop',
+    'stop server gracefully',
+    runCommand(async function(yargs): Promise<void> {
+      console.error('Stopping server...')
+      await client.stopServer()
+      console.error('Stopped server')
+    })
+  )
+  .command(
+    ['stahp', 'kill'],
+    'stop server forcefully',
+    runCommand(async function(yargs): Promise<void> {
+      console.error('Killing server...')
+      await client.killServer()
+      console.error('Killed server')
+    })
+  )
+  .command(
+    ['wheres <identifier>', "where's <identifier>"],
+    'suggest imports for an identifier',
+    function(yargs) {
+      yargs
+        .positional('identifier', {
+          describe: 'the identifier to suggest imports for',
+          type: 'string',
+        })
+        .option('file', {
+          type: 'string',
+          describe: 'import paths will be given relative to this file',
+        })
+    },
+    runCommand(async function(argv): Promise<void> {
+      const { identifier } = argv
+      const file = path.resolve(argv.file || 'index.js')
+
+      if (!identifier) {
+        console.error(
+          `Usage: ${shellCommand} ${
+            process.argv[2]
+          } <identifier> [--file <file>]`
+        )
+        process.exit(1)
+      }
+
+      const {
+        [identifier]: { suggested: suggestions },
+      } = await withStatus(() =>
+        client.getSuggestedImports({
+          identifier,
+          file,
+        })
+      )
+
+      for (let { code } of suggestions) {
+        console.log(code)
+      }
+      if (!suggestions.length) {
+        console.error(chalk.gray('no suggestions'))
+      }
+    })
+  )
+  .command(
+    'suggest <file>',
+    'suggest imports for undeclared identifiers in a file',
+    function(yargs) {
+      yargs.positional('file', {
+        describe: 'the .js file containing code to suggest imports for',
+        type: 'string',
+      })
+    },
+    runCommand(async function(argv): Promise<void> {
+      const file = path.resolve(argv.file)
+      const code = await fs.readFile(file, 'utf8')
+      const suggestions = await withStatus(() =>
+        client.getSuggestedImports({
+          code,
+          file,
+        })
+      )
+
+      for (let key in suggestions) {
+        const { identifier, start, end, context, suggested } = suggestions[key]
+        console.log(
+          `${chalk.bold(identifier)} (${start.line}:${
+            start.column
+          }) ${chalk.italic(
+            `${context.substring(0, start.column)}${chalk.bold(
+              context.substring(start.column, end.column)
+            )}${context.substring(end.column)}`
+          )}`
+        )
+        for (let { code } of suggested) {
+          console.log(`  ${code}`)
+        }
+        if (!suggested.length) {
+          console.error(chalk.gray(`  no suggestions`))
+        }
+      }
+      if (!Object.keys(suggestions).length) {
+        console.error(chalk.gray('no suggestions'))
+      }
+    })
+  )
+  .demandCommand()
+  .version()
+  .help()
+
+yargs.argv
