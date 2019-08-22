@@ -21,7 +21,7 @@ describe(`Client`, function() {
 
   it(`basic integration test`, async function(): Promise<void> {
     expect(
-      await client.getSuggestedImports({
+      await client.suggest({
         file: __filename,
         code: 'const client = new Client(__filename)',
       })
@@ -33,7 +33,7 @@ describe(`Client`, function() {
       },
     })
     expect(
-      await client.getSuggestedImports({
+      await client.wheres({
         file: __filename,
         identifier: 'spawn',
       })

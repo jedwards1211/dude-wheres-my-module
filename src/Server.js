@@ -20,15 +20,20 @@ import console, { stdout, stderr } from './console'
 import BabelParser from './parsers/babel'
 import hasBabel from './hasBabel'
 
-export type SuggestedImportsQuery = {
+export type SuggestMessage = {
   code?: ?string,
-  identifier?: ?string,
+  file: string,
+}
+
+export type WheresMessage = {
+  identifier: string,
   file: string,
 }
 
 export type Message = {
   seq: number,
-  getSuggestedImports?: SuggestedImportsQuery,
+  suggest?: SuggestMessage,
+  wheres?: WheresMessage,
   stop?: boolean,
   kill?: boolean,
 }
@@ -133,7 +138,8 @@ server.on('connection', (sock: net.Socket) => {
   const instream = JSONStream.parse('*')
   const outstream = JSONStream.stringify()
   instream.on('data', async (message: Message) => {
-    const { seq, getSuggestedImports, stop, kill } = message
+    console.error('[dwmm]', 'got message from client', message)
+    const { seq, suggest, wheres, stop, kill } = message
     if (stop) {
       console.error('[dwmm]', 'got stop request')
       await destroyServer()
@@ -146,32 +152,46 @@ server.on('connection', (sock: net.Socket) => {
       await cleanup()
       process.exit(5)
     }
-    if (getSuggestedImports) {
+    if (suggest) {
       let message
-      const { file, code, identifier } = getSuggestedImports
+      const { file } = suggest
+      const code =
+        suggest.code != null ? suggest.code : await fs.readFile(file, 'utf8')
       try {
         await indexer.waitUntilReady()
-        let result
-        if (code) {
-          result = getSuggestedImportsFn({
-            file,
-            code,
-            parser,
-            index,
-          })
-        } else if (identifier) {
-          result = {
-            [identifier]: {
-              identifier,
-              suggested: index.getSuggestedImports({ file, identifier }),
-            },
-          }
-        } else {
-          throw new Error('code or identifier must be given')
+        const result = getSuggestedImportsFn({
+          file,
+          code,
+          parser,
+          index,
+        })
+        message = {
+          seq,
+          suggest: result,
+        }
+      } catch (error) {
+        console.error(error.stack) // eslint-disable-line no-console
+        message = {
+          seq,
+          error: error.stack,
+        }
+      }
+      outstream.write(message)
+    }
+    if (wheres) {
+      let message
+      const { file, identifier } = wheres
+      try {
+        await indexer.waitUntilReady()
+        const result = {
+          [identifier]: {
+            identifier,
+            suggested: index.getSuggestedImports({ file, identifier }),
+          },
         }
         message = {
           seq,
-          getSuggestedImports: result,
+          wheres: result,
         }
       } catch (error) {
         console.error(error.stack) // eslint-disable-line no-console

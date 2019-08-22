@@ -141,7 +141,7 @@ yargs
       const {
         [identifier]: { suggested: suggestions },
       } = await withStatus(() =>
-        client.getSuggestedImports({
+        client.wheres({
           identifier,
           file,
         })
@@ -168,7 +168,7 @@ yargs
       const file = path.resolve(argv.file)
       const code = await fs.readFile(file, 'utf8')
       const suggestions = await withStatus(() =>
-        client.getSuggestedImports({
+        client.suggest({
           code,
           file,
         })

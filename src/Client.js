@@ -1,6 +1,6 @@
 // @flow
 
-import type { SuggestedImportResult } from './ModuleIndex'
+import type { SuggestedImportsResult } from './getSuggestedImports'
 import type { Progress } from './WatchingIndexer'
 import net from 'net'
 import tempFiles from './tempFiles'
@@ -13,11 +13,14 @@ import JSONStream from 'JSONStream'
 import EventEmitter from '@jcoreio/typed-event-emitter'
 import findRoot from 'find-root'
 
-import { type SuggestedImportsQuery } from './Server'
+import { type SuggestMessage, type WheresMessage } from './Server'
+
+import { type SuggestedImportResult } from './ModuleIndex'
 
 export type Message = {
   seq: number,
-  getSuggestedImports?: SuggestedImportsQuery,
+  suggest?: SuggestMessage,
+  wheres?: WheresMessage,
 }
 
 type Events = {
@@ -197,13 +200,18 @@ export default class Client extends EventEmitter<Events> {
     )
   }
 
-  async getSuggestedImports(
-    query: SuggestedImportsQuery
-  ): Promise<Array<SuggestedImportResult>> {
-    const { getSuggestedImports } = await this.request({
-      getSuggestedImports: query,
+  async wheres(query: WheresMessage): Promise<Array<SuggestedImportResult>> {
+    const { wheres } = await this.request({
+      wheres: query,
     })
-    return getSuggestedImports
+    return wheres
+  }
+
+  async suggest(query: SuggestMessage): Promise<SuggestedImportsResult> {
+    const { suggest } = await this.request({
+      suggest: query,
+    })
+    return suggest
   }
 
   async stopServer(): Promise<void> {
