@@ -164,7 +164,13 @@ export default class Client extends EventEmitter<Events> {
       return client
     }
 
-    return await (this.client || (this.client = actuallyConnect()))
+    if (this.client) return await this.client
+    this.client = actuallyConnect()
+    const client = await this.client
+    client.once('error', () => {
+      this.client = null
+    })
+    return client
   }
 
   async request(message: $Diff<Message, { seq: number }>): Promise<any> {
