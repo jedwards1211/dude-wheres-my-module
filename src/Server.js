@@ -1,5 +1,6 @@
 // @flow
 
+import './checkNodeVersion'
 import '@babel/polyfill'
 import ModuleIndex from './ModuleIndex'
 import WatchingIndexer from './WatchingIndexer'

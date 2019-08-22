@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 
+import './checkNodeVersion'
 import Client from './Client'
 import findRoot from 'find-root'
 import path from 'path'
