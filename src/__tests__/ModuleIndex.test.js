@@ -31,10 +31,10 @@ describe('ModuleIndex', function() {
 
       expect(
         index.getSuggestedImports({
-          identifier: 'uniqBy',
+          identifier: 'jscodeshift',
           file: require.resolve('../parsers/flow'),
         })
-      ).to.containSubset([{ code: 'import { uniqBy } from "lodash"' }])
+      ).to.containSubset([{ code: 'import jscodeshift from "jscodeshift"' }])
 
       expect(
         index.getSuggestedImports({

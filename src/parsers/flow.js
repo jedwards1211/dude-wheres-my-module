@@ -10,7 +10,6 @@ import type {
 import { parse } from 'flow-parser'
 import type { Parser, UndefinedIdentifier } from './Parser'
 import jscodeshift from 'jscodeshift'
-import { uniqBy } from 'lodash'
 import { namedTypes, Type } from 'ast-types'
 import builtinIdentifiers from '../util/builtinIdentifiers'
 
@@ -260,7 +259,15 @@ export default class FlowParser implements Parser {
               : 'value',
         }
       })
-    return uniqBy(identifiers, i => JSON.stringify([i.identifier, i.kind]))
+    const uniqIdentifiers = new Map()
+    identifiers.forEach((i: UndefinedIdentifier) => {
+      const { identifier, kind } = i
+      const existing = uniqIdentifiers.get(identifier)
+      if (kind === 'value' && (!existing || existing.kind !== 'value'))
+        uniqIdentifiers.set(identifier, i)
+      else if (!existing) uniqIdentifiers.set(identifier, i)
+    })
+    return [...uniqIdentifiers.values()]
   }
 
   async parse(options: {
