@@ -149,11 +149,13 @@ export default class WatchingIndexer extends EventEmitter<Events> {
 
     await this.loadNatives().catch(error => console.error(error.stack)) // eslint-disable-line no-console
     if (this.watcher) return
+    const ignoreFiles = await loadIgnoreFiles({ projectRoot })
+    ignoreFiles.forEach(file => console.error('[dwmm] ignoring:', file)) // eslint-disable-line no-console
     this.watcher = chokidar.watch(
       ['**/*.js', '**/.dude-wheres-my-module.js', '**/*.jsx'],
       {
         ignored: [
-          ...(await loadIgnoreFiles({ projectRoot })),
+          ...ignoreFiles,
           file => !isConfigFile(file) && /(^|[/\\])\../.test(file),
         ],
         cwd: this.projectRoot,

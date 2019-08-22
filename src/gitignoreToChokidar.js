@@ -44,7 +44,10 @@ export async function loadIgnoreFiles({
   projectRoot: string,
   globPattern?: string,
 }): Promise<Array<string>> {
-  const files = await glob(globPattern, { cwd: projectRoot })
+  const files = await glob(globPattern, {
+    cwd: projectRoot,
+    ignore: ['node_modules/**'],
+  })
   return [].concat(
     ...(await Promise.all(
       files.map(
@@ -54,8 +57,9 @@ export async function loadIgnoreFiles({
             'utf8'
           )).split(/\r\n?|\n/gm)
           const converted = gitignoreToChokidar(lines)
-          if (path.dirname(file) !== projectRoot) {
-            return converted.map(pattern => path.resolve(projectRoot, pattern))
+          const fileDir = path.dirname(file)
+          if (file !== '.gitignore') {
+            return converted.map(pattern => path.resolve(fileDir, pattern))
           }
           return converted
         }
