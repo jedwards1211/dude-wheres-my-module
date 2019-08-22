@@ -124,7 +124,7 @@
     "prettier-eslint": "^8.8.2",
     "recast": "^0.16.1",
     "rimraf": "^2.6.0",
-    "semantic-release": "^15.1.4"
+    "semantic-release": "^15.13.24"
   },
   "dependencies": {
     "@babel/polyfill": "^7.0.0",
