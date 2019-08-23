@@ -31,7 +31,7 @@ type Events = {
 
 export default class Client extends EventEmitter<Events> {
   projectRoot: string
-  client: ?Promise<net.Socket>
+  client: ?Promise<net$Socket>
   seq: number = 0
   instream: stream.Transform
   outstream: stream.Transform
@@ -51,13 +51,13 @@ export default class Client extends EventEmitter<Events> {
     startServer,
   }: {
     startServer?: ?boolean,
-  } = {}): Promise<net.Socket> {
-    const actuallyConnect = async (): Promise<net.Socket> => {
+  } = {}): Promise<net$Socket> {
+    const actuallyConnect = async (): Promise<net$Socket> => {
       const files = tempFiles(this.projectRoot)
 
       const client = await new Promise(
         (
-          resolve: (client: net.Socket) => any,
+          resolve: (client: net$Socket) => any,
           reject: (error: Error) => any
         ) => {
           let client,
@@ -216,9 +216,10 @@ export default class Client extends EventEmitter<Events> {
 
   async stopServer(): Promise<void> {
     try {
-      await this.connect()
+      const client: net$Socket = await this.connect()
       // $FlowFixMe
-      await promisify(cb => this.outstream.end({ stop: true }, cb))()
+      this.outstream.write({ stop: true })
+      await promisify(cb => client.end(cb))()
     } finally {
       this.client = null
     }
@@ -226,9 +227,10 @@ export default class Client extends EventEmitter<Events> {
 
   async killServer(): Promise<void> {
     try {
-      await this.connect()
+      const client: net$Socket = await this.connect()
       // $FlowFixMe
-      await promisify(cb => this.outstream.end({ kill: true }, cb))()
+      this.outstream.write({ kill: true })
+      client.end()
     } finally {
       this.client = null
     }
@@ -238,7 +240,7 @@ export default class Client extends EventEmitter<Events> {
     try {
       if (this.client) {
         const client = await this.client
-        await promisify(cb => client.end(cb))()
+        await promisify(cb => client.end(cb))
       }
     } catch (error) {
       // ignore

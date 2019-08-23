@@ -16,7 +16,7 @@
     "flow:watch": "flow-watch -e js,js.flow,flowconfig --ignore es/ --ignore node_modules/ --watch .flowconfig --watch src/ --watch test/",
     "clean": "rimraf es lib $(cd src; ls) *.js.flow",
     "build": "npm run clean && babel src --out-dir es --ignore '**/__tests__/**' && flow-copy-source -v src/ es --ignore '**/__tests__/**' && cross-env BABEL_ENV=es5 babel src --out-dir . --ignore '**/__tests__/**' && flow-copy-source -v src/ . --ignore '**/__tests__/**'",
-    "test": "cross-env NODE_ENV=production BABEL_ENV=es5 DWMM_TEST=1 mocha $npm_package_config_mocha && cross-env NODE_ENV=production BABEL_ENV=coverage DWMM_TEST=1 nyc --reporter=lcov --reporter=text mocha $npm_package_config_mocha",
+    "test": "cross-env NODE_ENV=production BABEL_ENV=es5 DWMM_TEST=1 mocha --exit $npm_package_config_mocha && cross-env NODE_ENV=production BABEL_ENV=coverage DWMM_TEST=1 nyc --reporter=lcov --reporter=text mocha --exit $npm_package_config_mocha",
     "test:watch": "cross-env NODE_ENV=production BABEL_ENV=test DWMM_TEST=1 mocha --watch $npm_package_config_mocha",
     "test:debug": "cross-env NODE_ENV=production BABEL_ENV=test DWMM_TEST=1 mocha --inspect-brk $npm_package_config_mocha",
     "codecov": "nyc report --reporter=text-lcov > coverage.lcov; codecov",

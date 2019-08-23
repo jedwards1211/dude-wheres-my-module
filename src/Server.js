@@ -126,12 +126,6 @@ process.on('SIGTERM', handleSignal)
 
 const sockets: Set<net.Socket> = new Set()
 
-async function destroyServer(): Promise<void> {
-  for (const sock of sockets) sock.destroy()
-  sockets.clear()
-  await promisify(cb => server.close(cb))
-}
-
 server.on('connection', (sock: net.Socket) => {
   sockets.add(sock)
   sock.on('close', () => sockets.delete(sock))
@@ -142,13 +136,17 @@ server.on('connection', (sock: net.Socket) => {
     const { seq, suggest, wheres, stop, kill } = message
     if (stop) {
       console.error('[dwmm]', 'got stop request')
-      await destroyServer()
+      for (const sock of sockets) await promisify(cb => sock.end(cb))
+      sockets.clear()
+      await promisify(cb => server.close(cb))
       await cleanup()
       process.exit(0)
     }
     if (kill) {
       console.error('[dwmm]', 'got kill request')
-      destroyServer()
+      for (const sock of sockets) sock.destroy()
+      sockets.clear()
+      await promisify(cb => server.close(cb))
       await cleanup()
       process.exit(5)
     }
