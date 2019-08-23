@@ -247,7 +247,7 @@ from them.
 
 ## Config file API
 
-The config file's `module.exports` should a promise-returning function that
+The config file's `module.exports` must be a function that
 returns a config object (or a `Promise` that resolves to a config object).
 The following properties on the config object are supported:
 
