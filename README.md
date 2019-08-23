@@ -35,6 +35,9 @@ or VSCode plugin soon.
   - [`Client.on('starting', () => any)`](#clientonstarting---any)
   - [`Client.on('progress', ({ completed: number, total: number }) => any)`](#clientonprogress--completed-number-total-number---any)
   - [`Client.on('ready', () => any)`](#clientonready---any)
+- [Configuration](#configuration)
+  - [Config file API](#config-file-api)
+  - [Config file example](#config-file-example)
 
 <!-- tocstop -->
 
@@ -227,3 +230,138 @@ number of files it has discovered to parse, and the number of files it has
 ## `Client.on('ready', () => any)`
 
 This event is emitted when the server has finished starting up.
+
+# Configuration
+
+`dude-where-my-module` looks for `.dude-wheres-my-module.js` files in your
+project directory and subdirectories. If found, it will load configuration
+from them.
+
+## Config file API
+
+The config file's `module.exports` should be a promise-returning function.
+The promise should resolve to an object with the following properties:
+
+### `preferredImports: Array<string>`
+
+An array of code containing `import` statements you would like to come first
+in suggested import lists.
+
+## Config file example
+
+This is the config file I use in one of my main projects. It adds submodules
+from `lodash`, `@material-ui/core`, `@material-ui/icons`, to the preferred imports.
+
+```js
+/**
+ * @prettier
+ */
+
+module.exports = async function configure() {
+  const path = require('path')
+  const { promisify } = require('es6-promisify')
+  const glob = promisify(require('glob'))
+
+  const nodeModulesDir = path.join(__dirname, 'node_modules')
+
+  function assumeDefaultImports(files, options = {}) {
+    const transformIdentifier = options.transformIdentifier || (id => id)
+    const result = []
+    files.forEach(file => {
+      if (/index\.js$/.test(file)) file = path.dirname(file)
+      file = file.replace(/\.js$/, '')
+      const identifier = path.basename(file)
+      if (identifier[0] === '_' || /[^a-zA-Z0-9_]/.test(identifier)) return
+      result.push(
+        `import ${transformIdentifier(identifier, {
+          file,
+        })} from '${path.relative(nodeModulesDir, file)}'`
+      )
+    })
+    return result
+  }
+
+  function assumeNamedImports(files) {
+    const result = []
+    files.forEach(file => {
+      if (/index\.js$/.test(file)) file = path.dirname(file)
+      file = file.replace(/\.js$/, '')
+      const identifier = path.basename(file)
+      if (/^_|[^a-zA-Z0-9_]|^function$/.test(identifier)) return
+      result.push(
+        `import { ${identifier} } from '${path
+          .relative(nodeModulesDir, path.dirname(file))
+          .replace(/^\.\//, '')}'`
+      )
+    })
+    return result
+  }
+
+  async function globNodeModules(pattern) {
+    const files = await glob(path.join(nodeModulesDir, pattern))
+    return assumeDefaultImports(files)
+  }
+
+  const preferredImports = [
+    `
+import _ from 'lodash'
+import gql from 'graphql-tag'
+import Sequelize, {Model, Association, type Transaction, type QueryGenerator, type FindOptions, type WhereOptions} from 'sequelize'
+import {Query, Mutation, type QueryRenderProps, type MutationFunction} from 'react-apollo'
+import Route from 'react-router-parsed/Route'
+import {Link, NavLink, type Match, type RouterHistory, type Location} from 'react-router-dom'
+import {createSelector, createStructuredSelector} from 'reselect'
+import {connect, bindActionCreators} from 'react-redux'
+import {compose} from 'redux'
+import * as graphql from 'graphql'
+import * as React from 'react'
+import {reify} from 'flow-runtime'
+import type {Type} from 'flow-runtime'
+import classNames from 'classnames'
+import requireEnv from '@jcoreio/require-env'
+import path from 'path'
+import fs from 'fs-extra'
+import promisify from 'es6-promisify'
+import BreakpointMedia from 'react-media-material-ui/BreakpointMedia'
+import {type FormProps, type FieldProps, type FieldArrayProps} from 'redux-form'
+import {describe, it, before, after, beforeEach, afterEach} from 'mocha'
+import {expect} from 'chai'
+    `,
+  ]
+
+  preferredImports.push(
+    ...assumeNamedImports(
+      await glob(path.join(nodeModulesDir, 'lodash/fp/*.js'))
+    )
+  )
+
+  for (let pattern of [
+    'redux-form/es/*.js',
+    'redux-form-material-ui/es/*.js',
+  ]) {
+    preferredImports.push(...(await globNodeModules(pattern)))
+  }
+  preferredImports.push(
+    ...assumeDefaultImports(
+      await glob(path.join(nodeModulesDir, '@material-ui/core/**/index.js'), {
+        ignore: [path.join(nodeModulesDir, '@material-ui/core/es/**')],
+      })
+    )
+  )
+  preferredImports.push(
+    ...assumeDefaultImports(
+      await glob(path.join(nodeModulesDir, '@material-ui/icons/*.js')),
+      { transformIdentifier: identifier => `${identifier}Icon` }
+    )
+  )
+  preferredImports.push(
+    ...assumeDefaultImports(
+      await glob(path.join(nodeModulesDir, '@material-ui/icons/*.js'))
+    )
+  )
+
+  return {
+    preferredImports,
+  }
+}
+```
