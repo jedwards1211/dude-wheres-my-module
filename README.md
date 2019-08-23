@@ -153,6 +153,14 @@ const ListWithOneStatusItem = ({
 export default ListWithOneStatusItem
 ```
 
+## `dude log [-f [tail options]]`
+
+Print the server log file. With `-f`, it will `tail` the file.
+
+## `dude errors`
+
+Print out any error messages found in the server log file.
+
 ## `dude stop`
 
 Stops the server gracefully.
@@ -239,8 +247,9 @@ from them.
 
 ## Config file API
 
-The config file's `module.exports` should be a promise-returning function.
-The promise should resolve to an object with the following properties:
+The config file's `module.exports` should a promise-returning function that
+returns a config object (or a `Promise` that resolves to a config object).
+The following properties on the config object are supported:
 
 ### `preferredImports: Array<string>`
 
