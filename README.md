@@ -82,7 +82,7 @@ npm install --global dude-wheres-my-module
 
 # CLI Commands
 
-The CLI isn't intended to be the primary way you get import suggestions, it's just for test-driving the server or telling it to shut down.
+The CLI isn't intended to be the primary way you get import suggestions, it's just for test-driving the server, debugging errors, or telling it to shut down.
 
 All commands will automatically start a server for the
 current project directory if one isn't already running
@@ -187,6 +187,8 @@ will automatically find the actual project root directory)
 
 ## `Client.suggest(options)`
 
+Suggests `import` or `require` statements for all undeclared identifiers in a file.
+
 ### `options`
 
 ##### `file` (`string`, _required_)
@@ -195,7 +197,8 @@ The file to suggest import paths relative to.
 
 ##### `code` (`string`, _optional_)
 
-If given, will suggest imports for any undeclared identifiers in this code.
+The code to suggest imports for. If not given, the contents of `file` will be
+used.
 
 ### Returns (`Promise<SuggestedImportsResult>`)
 
@@ -212,6 +215,9 @@ and the corresponding value is an object with the following properties:
   - `ast` - the AST of the `import` or `require` statement
 
 ## `Client.wheres(options)`
+
+Suggests `import` or `require` statements for a given identifier. You can optionally specify a filename to
+import relative to.
 
 ### `options`
 
@@ -249,6 +255,8 @@ This event is emitted when the server has finished starting up.
 project directory and subdirectories. If found, it will load configuration
 from them.
 
+The server will hot-reload a file's configuration whenever you save changes to it.
+
 ## Config file API
 
 The config file's `module.exports` must be a function that
@@ -264,7 +272,7 @@ in suggested import lists.
 
 This is the config file I use in one of my main projects. It adds submodules
 from `lodash`, `@material-ui/core`, `@material-ui/icons`, and many more packages
-o the preferred imports.
+to the preferred imports.
 
 ```js
 /**
