@@ -259,7 +259,8 @@ in suggested import lists.
 ## Config file example
 
 This is the config file I use in one of my main projects. It adds submodules
-from `lodash`, `@material-ui/core`, `@material-ui/icons`, to the preferred imports.
+from `lodash`, `@material-ui/core`, `@material-ui/icons`, and many more packages
+o the preferred imports.
 
 ```js
 /**
