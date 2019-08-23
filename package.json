@@ -72,7 +72,10 @@
     "url": "https://github.com/jedwards1211/dude-wheres-my-module.git"
   },
   "keywords": [
-    "es2015"
+    "automatic-imports",
+    "suggested-imports",
+    "ide-tools",
+    "flowtype"
   ],
   "author": "Andy Edwards",
   "license": "MIT",
