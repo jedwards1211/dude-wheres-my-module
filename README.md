@@ -26,6 +26,8 @@ or VSCode plugin soon.
 - [CLI Commands](#cli-commands)
   - [`dude wheres [--file ]`](#dude-wheres----file-)
   - [`dude suggest`](#dude-suggest-)
+  - [`dude log [-f [tail options]]`](#dude-log--f-tail-options)
+  - [`dude errors`](#dude-errors)
   - [`dude stop`](#dude-stop)
   - [`dude stahp`/`dude kill`](#dude-stahpdude-kill)
 - [Node.js API](#nodejs-api)
@@ -38,6 +40,7 @@ or VSCode plugin soon.
 - [Configuration](#configuration)
   - [Config file API](#config-file-api)
   - [Config file example](#config-file-example)
+- [Merging suggested imports into the code](#merging-suggested-imports-into-the-code)
 
 <!-- tocstop -->
 

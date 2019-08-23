@@ -376,6 +376,17 @@ describe(`BabelParser`, function() {
         { identifier: 'ListItemText', kind: 'value' },
       ])
     })
+    it(`OptionalMemberExpression issue`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        const foo = {}
+        const bar = foo?.bar
+        `,
+        file: testFile,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
   })
   describe(`parse`, function() {
     async function parse({ code }) {

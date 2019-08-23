@@ -135,6 +135,7 @@ export default class BabelParser implements Parser {
           case 'OpaqueType':
             return
           case 'MemberExpression':
+          case 'OptionalMemberExpression':
             if (parent.property === node && !parent.computed) return false
             break
           case 'ExportSpecifier':

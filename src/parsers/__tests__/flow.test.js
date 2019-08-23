@@ -306,6 +306,16 @@ describe(`FlowParser`, function() {
         { identifier: 'ListItemText', kind: 'value' },
       ])
     })
+    it(`OptionalMemberExpression issue`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        const foo = {}
+        const bar = foo?.bar
+        `,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
   })
   describe(`parse`, function() {
     it(`ignores shadowed require calls`, async function(): Promise<void> {
