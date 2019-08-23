@@ -6,9 +6,7 @@
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 [![npm version](https://badge.fury.io/js/dude-wheres-my-module.svg)](https://badge.fury.io/js/dude-wheres-my-module)
 
-JavaScript/Flow suggested import server
-
-# Overview
+### JavaScript/Flow suggested import server
 
 As far as I can tell this is currently the only tool that can write not just
 ordinary JS import and require statements but also Flow type import statements
@@ -17,6 +15,28 @@ for you too.
 I'm using it with a cobbled-together [`atom-morpher`](https://github.com/suchipi/atom-morpher)
 transform to run it in Atom. Hopefully I'll make a more first-class Atom
 or VSCode plugin soon.
+
+# Table of Contents
+
+<!-- toc -->
+
+- [Features](#features)
+- [Limitations/Known Issues](#limitationsknown-issues)
+- [Installation](#installation)
+- [CLI Commands](#cli-commands)
+  - [`dude wheres [--file ]`](#dude-wheres----file-)
+  - [`dude suggest`](#dude-suggest-)
+  - [`dude stop`](#dude-stop)
+  - [`dude stahp`/`dude kill`](#dude-stahpdude-kill)
+- [Node.js API](#nodejs-api)
+  - [`new Client(projectRoot: string)`](#new-clientprojectroot-string)
+  - [`Client.suggest(options)`](#clientsuggestoptions)
+  - [`Client.wheres(options)`](#clientwheresoptions)
+  - [`Client.on('starting', () => any)`](#clientonstarting---any)
+  - [`Client.on('progress', ({ completed: number, total: number }) => any)`](#clientonprogress--completed-number-total-number---any)
+  - [`Client.on('ready', () => any)`](#clientonready---any)
+
+<!-- tocstop -->
 
 # Features
 
@@ -194,18 +214,16 @@ Each `SuggestedImportResult` has the following properties:
 
 - `code: string` - the `import` statement code
 
-## Events
+## `Client.on('starting', () => any)`
 
-`Client` extends `EventEmitter` and emits the following events:
+This event is emitted when the client has started a new server process.
 
-### `Client.on('starting', () => any)`
+## `Client.on('progress', ({ completed: number, total: number }) => any)`
 
-Indicates the client has started a new server process.
+This event is emitted when the server parses a file, and includes the `total`
+number of files it has discovered to parse, and the number of files it has
+`completed` parsing.
 
-### `Client.on('progress', ({ completed: number, total: number }) => any)`
+## `Client.on('ready', () => any)`
 
-Indicates the server startup progress.
-
-### `Client.on('ready', () => any)`
-
-Indicates the server has finished starting up.
+This event is emitted when the server has finished starting up.
