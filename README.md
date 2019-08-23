@@ -375,3 +375,9 @@ import {expect} from 'chai'
   }
 }
 ```
+
+# Merging suggested imports into the code
+
+If you're interested in writing an IDE plugin that uses `dude-wheres-my-module`,
+I'd recommend using [`jscodeshift-add-imports`](https://github.com/jedwards1211/jscodeshift-add-imports#readme)
+to merge the suggested imports into the the code.
