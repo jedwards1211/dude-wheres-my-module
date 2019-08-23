@@ -15,7 +15,7 @@ describe(`Client`, function() {
   this.timeout(30000)
 
   after(async function(): Promise<void> {
-    this.timeout(5000)
+    this.timeout(10000)
     await client.close()
   })
 
