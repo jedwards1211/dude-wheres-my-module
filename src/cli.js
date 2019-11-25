@@ -10,10 +10,10 @@ import { eraseStartLine, cursorLeft } from 'ansi-escapes'
 import chalk from 'chalk'
 import tempFiles from './tempFiles'
 import fs from 'fs-extra'
-
 import { spawn } from 'child_process'
-
+import { isEmpty, flatMap } from 'lodash/fp'
 import emitted from 'p-event'
+import glob from 'glob'
 
 const projectRoot = findRoot(process.cwd())
 const files = tempFiles(projectRoot)
@@ -156,44 +156,56 @@ yargs
     })
   )
   .command(
-    'suggest <file>',
+    'suggest <files...>',
     'suggest imports for undeclared identifiers in a file',
     function(yargs) {
-      yargs.positional('file', {
-        describe: 'the .js file containing code to suggest imports for',
+      yargs.positional('files', {
+        describe: 'the .js files containing code to suggest imports for',
         type: 'string',
       })
     },
     runCommand(async function(argv): Promise<void> {
-      const file = path.resolve(argv.file)
-      const code = await fs.readFile(file, 'utf8')
-      const suggestions = await withStatus(() =>
-        client.suggest({
-          code,
-          file,
-        })
-      )
+      const files = flatMap(f =>
+        glob.hasMagic(f) ? glob.sync(path.resolve(f)) : f
+      )(argv.files)
+      for (const f of files) {
+        const file = path.resolve(f)
+        const code = await fs.readFile(file, 'utf8')
+        const suggestions = await withStatus(() =>
+          client.suggest({
+            code,
+            file,
+          })
+        )
 
-      for (let key in suggestions) {
-        const { identifier, start, end, context, suggested } = suggestions[key]
-        console.log(
-          `${chalk.bold(identifier)} (${start.line}:${
+        if (files.length > 1 && !isEmpty(suggestions)) {
+          console.log(file)
+        }
+        for (let key in suggestions) {
+          const { identifier, start, end, context, suggested } = suggestions[
+            key
+          ]
+          let output = `${chalk.bold(identifier)} (${start.line}:${
             start.column
           }) ${chalk.italic(
             `${context.substring(0, start.column)}${chalk.bold(
               context.substring(start.column, end.column)
             )}${context.substring(end.column)}`
           )}`
-        )
-        for (let { code } of suggested) {
-          console.log(`  ${code}`)
+          if (files.length > 1) output = output.replace(/^/gm, '  ')
+          console.log(output)
+          for (let { code } of suggested) {
+            console.log(files.length > 1 ? '    ' : '  ' + code)
+          }
+          if (!suggested.length) {
+            console.error(
+              chalk.gray((files.length > 1 ? '    ' : '  ') + 'no suggestions')
+            )
+          }
         }
-        if (!suggested.length) {
-          console.error(chalk.gray(`  no suggestions`))
+        if (isEmpty(suggestions) && files.length <= 1) {
+          console.error(chalk.gray('no suggestions'))
         }
-      }
-      if (!Object.keys(suggestions).length) {
-        console.error(chalk.gray('no suggestions'))
       }
     })
   )
