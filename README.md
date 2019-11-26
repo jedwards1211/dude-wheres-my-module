@@ -64,11 +64,6 @@ or VSCode plugin soon.
 
 This project is getting pretty solid, but there are still a few issues.
 
-- There are still a few cases where `dude-wheres-my-module` mistakenly thinks
-  an identifier is unbound, for example `T` in the following statement:
-  ```
-  async function withStatus<T>(fn: () => Promise<T>): Promise<T> {
-  ```
 - There are a few cases where obsolete suggested imports
   stick around after you delete them from the file `dude-wheres-my-module` got them from, or delete that file entirely.
 - `dude-wheres-my-module` doesn't automatically try to figure out what imports are available from packages in your `node_modules` yet. But the good news is that if you've imported something once in one file, it will be available in suggestions for other files. You can also manually configure preferred imports from packages in `node_modules`

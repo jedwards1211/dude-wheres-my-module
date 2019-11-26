@@ -12,7 +12,6 @@ import stream from 'stream'
 import JSONStream from 'JSONStream'
 import EventEmitter from '@jcoreio/typed-event-emitter'
 import findRoot from 'find-root'
-
 import { type SuggestMessage, type WheresMessage } from './Server'
 
 import { type SuggestedImportResult } from './ModuleIndex'
@@ -31,7 +30,7 @@ type Events = {
 
 export default class Client extends EventEmitter<Events> {
   projectRoot: string
-  client: ?Promise<net$Socket>
+  client: ?Promise<net.Socket>
   seq: number = 0
   instream: stream.Transform
   outstream: stream.Transform
@@ -51,13 +50,13 @@ export default class Client extends EventEmitter<Events> {
     startServer,
   }: {
     startServer?: ?boolean,
-  } = {}): Promise<net$Socket> {
-    const actuallyConnect = async (): Promise<net$Socket> => {
+  } = {}): Promise<net.Socket> {
+    const actuallyConnect = async (): Promise<net.Socket> => {
       const files = tempFiles(this.projectRoot)
 
       const client = await new Promise(
         (
-          resolve: (client: net$Socket) => any,
+          resolve: (client: net.Socket) => any,
           reject: (error: Error) => any
         ) => {
           let client,
@@ -216,7 +215,7 @@ export default class Client extends EventEmitter<Events> {
 
   async stopServer(): Promise<void> {
     try {
-      const client: net$Socket = await this.connect()
+      const client: net.Socket = await this.connect()
       // $FlowFixMe
       this.outstream.write({ stop: true })
       await promisify(cb => client.end(cb))()
@@ -227,7 +226,7 @@ export default class Client extends EventEmitter<Events> {
 
   async killServer(): Promise<void> {
     try {
-      const client: net$Socket = await this.connect()
+      const client: net.Socket = await this.connect()
       // $FlowFixMe
       this.outstream.write({ kill: true })
       client.end()
