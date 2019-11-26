@@ -34,6 +34,20 @@ type NodePath = {
   scope: ?Scope,
   get(...path: Array<number | string>): NodePath,
   typeParameters: ?{ [name: string]: Array<NodePath> },
+  isTypeParameterDeclaration: () => boolean,
+}
+
+function lookupTypeParameter(path: ?NodePath, name: string): ?NodePath {
+  while (path) {
+    const typeParameters = path.get('typeParameters')
+    if (typeParameters.isTypeParameterDeclaration()) {
+      const params: Array<NodePath> = (typeParameters.get('params'): any)
+      return Array.isArray(params)
+        ? params.find(p => p.node.name === name)
+        : null
+    }
+    path = path.parentPath
+  }
 }
 
 export default class BabelParser implements Parser {
@@ -125,7 +139,16 @@ export default class BabelParser implements Parser {
 
         if (scope.getBinding(node.name)) return
 
+        let isType = false
+
         switch (parent.type) {
+          case 'GenericTypeAnnotation':
+            isType = true
+            break
+          case 'QualifiedTypeIdentifier':
+            if (parent.id === node) return
+            isType = parent.qualification === node
+            break
           case 'ImportDefaultSpecifier':
           case 'ImportNamespaceSpecifier':
           case 'ImportSpecifier':
@@ -144,7 +167,6 @@ export default class BabelParser implements Parser {
             if (parent.exported === node) return
             break
           case 'ObjectTypeIndexer':
-          case 'QualifiedTypeIdentifier':
           case 'TypeAlias':
           case 'ClassDeclaration':
           case 'VariableDeclarator':
@@ -176,6 +198,9 @@ export default class BabelParser implements Parser {
             if (parent.params.indexOf(node) >= 0) return
             break
         }
+
+        if (isType && lookupTypeParameter(path, node.name)) return
+
         const { name: identifier, loc } = node
         if (loc && loc.start && loc.start.line != null) {
           const { start, end } = loc

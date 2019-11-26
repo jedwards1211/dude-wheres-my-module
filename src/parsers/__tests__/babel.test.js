@@ -387,6 +387,75 @@ describe(`BabelParser`, function() {
       })
       expect(found).to.have.lengthOf(0)
     })
+    it(`class type parameters`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        // @flow
+        class Foo<Bar> {}
+        `,
+        file: testFile,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
+    it(`interface type parameters`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        // @flow
+        interface Foo<Bar> {}
+        `,
+        file: testFile,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
+    it(`arrow function type parameters`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        // @flow
+        const foo = <T>(bar: T) => bar
+        `,
+        file: testFile,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
+    it(`function type annotation parameters`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        // @flow
+        type Foo = <T>(T) => T
+        `,
+        file: testFile,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
+    it(`function type parameters`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        // @flow
+        async function withStatus<T>(fn: () => Promise<T>): Promise<T> {}
+        `,
+        file: testFile,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
+    it(`Type parameters issue`, function() {
+      const parser = new BabelParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        // @flow
+        type Classes<Styles> = $Call<
+          <T>((any) => T) => { [$Keys<T>]: string },
+          Styles
+        >
+        `,
+        file: testFile,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
   })
   describe(`parse`, function() {
     async function parse({ code }) {
