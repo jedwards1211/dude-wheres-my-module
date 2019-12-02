@@ -2,6 +2,11 @@ import { SuggestedImportResult as BaseResult } from './ModuleIndex'
 
 import { ImportDeclaration, Kind } from './ASTTypes'
 
+export type Location = {
+  line: number
+  column: number
+}
+
 export type UndefinedIdentifier = {
   identifier: string
   start: Location
