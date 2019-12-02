@@ -20,7 +20,7 @@
     "test:watch": "cross-env NODE_ENV=production BABEL_ENV=test DWMM_TEST=1 mocha --watch $npm_package_config_mocha",
     "test:debug": "cross-env NODE_ENV=production BABEL_ENV=test DWMM_TEST=1 mocha --inspect-brk $npm_package_config_mocha",
     "codecov": "nyc report --reporter=text-lcov > coverage.lcov; codecov",
-    "prepublishOnly": "npm run clean && npm run prettier:check && npm run lint && flow && npm test && npm run build",
+    "prepublishOnly": "npm run clean && npm run prettier:check && npm run lint && flow && tsc && npm test && npm run build",
     "open:coverage": "open coverage/lcov-report/index.html",
     "semantic-release": "semantic-release"
   },
@@ -30,7 +30,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged && npm run lint && flow",
+      "pre-commit": "lint-staged && npm run lint && flow && tsc",
       "commit-msg": "commitlint -e $GIT_PARAMS",
       "pre-push": "npm test"
     }
@@ -105,6 +105,7 @@
     "@jedwards1211/commitlint-config": "^1.0.0",
     "@jedwards1211/eslint-config": "^2.0.0",
     "@jedwards1211/eslint-config-flow": "^1.0.2",
+    "@types/node": "^12.12.14",
     "babel-eslint": "^10.0.1",
     "babel-plugin-istanbul": "^5.1.0",
     "chai": "^4.2.0",
@@ -128,7 +129,8 @@
     "prettier-eslint": "^8.8.2",
     "recast": "^0.16.1",
     "rimraf": "^2.6.0",
-    "semantic-release": "^15.13.24"
+    "semantic-release": "^15.13.24",
+    "typescript": "^3.7.2"
   },
   "dependencies": {
     "@babel/polyfill": "^7.0.0",
