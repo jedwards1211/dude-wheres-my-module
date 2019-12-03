@@ -71,8 +71,6 @@ export default class WatchingIndexer extends EventEmitter<Events> {
   }
 
   async processFile(file: string): Promise<void> {
-    file = path.resolve(this.projectRoot, file)
-    this.allFiles.add(file)
     this.emitProgress()
     this.pendingFiles.add(file)
     try {
@@ -147,7 +145,6 @@ export default class WatchingIndexer extends EventEmitter<Events> {
   async start(): Promise<void> {
     const { projectRoot } = this
 
-    await this.loadNatives().catch(error => console.error(error.stack)) // eslint-disable-line no-console
     if (this.watcher) return
     const ignoreFiles = await loadIgnoreFiles({ projectRoot })
     ignoreFiles.forEach(file => console.error('[dwmm] ignoring:', file)) // eslint-disable-line no-console
@@ -163,32 +160,39 @@ export default class WatchingIndexer extends EventEmitter<Events> {
     )
     this.watcher.on('ready', () => {
       this.gotReady = true
+      for (const file of this.allFiles) this.processFile(file)
       if (this.isReady()) this.emit('ready')
     })
     this.watcher.on('add', (file: string) => {
       console.error('[dwmm] added:', file) // eslint-disable-line no-console
-      this.processFile(path.resolve(projectRoot, file))
+      file = path.resolve(projectRoot, file)
+      this.allFiles.add(file)
+      this.pendingFiles.add(file)
+      if (this.gotReady) this.processFile(file)
     })
     this.watcher.on(
       'change',
       async (file: string): Promise<void> => {
         console.error('[dwmm] changed:', file) // eslint-disable-line no-console
-        this.processFile(path.resolve(projectRoot, file))
+        file = path.resolve(projectRoot, file)
+        if (this.gotReady) this.processFile(file)
       }
     )
     this.watcher.on(
       'unlink',
       async (file: string): Promise<void> => {
         console.error('[dwmm] unlinked:', file) // eslint-disable-line no-console
+        file = path.resolve(projectRoot, file)
         this.allFiles.delete(file)
         this.deletePendingFile(file)
-        file = path.resolve(projectRoot, file)
-        this.index.undeclareModule(file)
+        if (this.gotReady) this.index.undeclareModule(file)
       }
     )
+    await this.loadNatives().catch(error => console.error(error.stack)) // eslint-disable-line no-console
   }
 
   emitProgress = throttle(() => {
+    if (!this.gotReady) return
     this.emit('progress', this.getProgress())
   }, 50)
 
