@@ -952,6 +952,11 @@
   dependencies:
     find-up "^2.1.0"
 
+"@jcoreio/poll@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@jcoreio/poll/-/poll-2.0.0.tgz#af5a27bd6522ed52318ebd1c6b90285e224f3774"
+  integrity sha512-kT1eIFy667yw4PU/ci15HXN5y3kQf06e8cyqnkzR3CJhQeQZKM4KfRaE0qW3jCGMQvytB6XdQdUIgZU0wzgPLQ==
+
 "@jcoreio/typed-event-emitter@^1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@jcoreio/typed-event-emitter/-/typed-event-emitter-1.0.0.tgz#6ebd3e0c1a6423a77ad9964e779cf156ae65c992"
@@ -6982,10 +6987,10 @@ p-defer@^1.0.0:
   resolved "https://registry.yarnpkg.com/p-defer/-/p-defer-1.0.0.tgz#9f6eb182f6c9aa8cd743004a7d4f96b196b0fb0c"
   integrity sha1-n26xgvbJqozXQwBKfU+WsZaw+ww=
 
-p-event@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/p-event/-/p-event-2.1.0.tgz#74de477a4e6b3aa8267240c7099e78ac52cb4db4"
-  integrity sha512-sDEpDVnzLGlJj3k590uUdpfEUySP5yAYlvfTCu5hTDvSTXQVecYWKcEwdO49PrZlnJ5wkfAvtawnno/jyXeqvA==
+p-event@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/p-event/-/p-event-4.1.0.tgz#e92bb866d7e8e5b732293b1c8269d38e9982bf8e"
+  integrity sha512-4vAd06GCsgflX4wHN1JqrMzBh/8QZ4j+rzp0cd2scXRwuBEv+QR3wrVA5aLhWDLw4y2WgDKvzWF3CCLmVM1UgA==
   dependencies:
     p-timeout "^2.0.1"
 
