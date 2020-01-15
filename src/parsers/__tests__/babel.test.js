@@ -16,6 +16,11 @@ describe(`BabelParser`, function() {
       const parser = new BabelParser()
       expect(parser.getMode({ code: '' })).to.equal('require')
     })
+    it(`always returns import for .ts/x files`, function() {
+      const parser = new BabelParser()
+      expect(parser.getMode({ code: '', file: 'foo.ts' })).to.equal('import')
+      expect(parser.getMode({ code: '', file: 'foo.tsx' })).to.equal('import')
+    })
     it(`returns import if any flow annotation is found`, function() {
       const parser = new BabelParser()
       expect(parser.getMode({ code: '// @flow' })).to.equal('import')

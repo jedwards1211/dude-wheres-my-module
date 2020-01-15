@@ -74,6 +74,8 @@ export default class BabelParser implements Parser {
     code: string,
     file?: string,
   }): 'import' | 'require' {
+    if (file && /\.tsx?$/i.test(file)) return 'import'
+
     const projectDirectory = findRoot(file)
 
     // $FlowFixMe
