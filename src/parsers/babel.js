@@ -15,6 +15,8 @@ import babelConvertRequiresToImports from './babelConvertRequiresToImports'
 
 import findRoot from 'find-root'
 import { type VariableDeclaration } from '../ASTTypes'
+import typescriptTypeIdentifiers from '../util/typescriptTypeIdentifiers'
+import flowTypeIdentifiers from '../util/flowTypeIdentifiers'
 const j = jscodeshift.withParser('babylon')
 
 type Node = Object
@@ -24,6 +26,11 @@ type Binding = Object
 type Scope = {
   types: { [name: string]: Array<NodePath> },
   getBinding(name: string): ?Binding,
+  registerBinding(
+    kind: string,
+    path: NodePath,
+    bindingPath?: NodePath
+  ): Binding,
 }
 
 type NodePath = {
@@ -35,12 +42,16 @@ type NodePath = {
   get(...path: Array<number | string>): NodePath,
   typeParameters: ?{ [name: string]: Array<NodePath> },
   isTypeParameterDeclaration: () => boolean,
+  isTSTypeParameterDeclaration: () => boolean,
 }
 
 function lookupTypeParameter(path: ?NodePath, name: string): ?NodePath {
   while (path) {
     const typeParameters = path.get('typeParameters')
-    if (typeParameters.isTypeParameterDeclaration()) {
+    if (
+      typeParameters.isTypeParameterDeclaration() ||
+      typeParameters.isTSTypeParameterDeclaration()
+    ) {
       const params: Array<NodePath> = (typeParameters.get('params'): any)
       return Array.isArray(params)
         ? params.find(p => p.node.name === name)
@@ -51,6 +62,11 @@ function lookupTypeParameter(path: ?NodePath, name: string): ?NodePath {
 }
 
 export default class BabelParser implements Parser {
+  options: ?Object
+
+  constructor(options?: Object) {
+    this.options = options
+  }
   getMode({
     code,
     file,
@@ -113,6 +129,8 @@ export default class BabelParser implements Parser {
   }): Array<UndefinedIdentifier> {
     const projectDirectory = findRoot(file)
 
+    const isTypeScript = file && /\.tsx?/i.test(file)
+
     // $FlowFixMe
     const babel = require(require.resolve('@babel/core', {
       paths: [projectDirectory],
@@ -123,6 +141,7 @@ export default class BabelParser implements Parser {
     })).default
 
     const ast = babel.parse(code, {
+      ...this.options,
       cwd: projectDirectory,
       filename: file,
     })
@@ -132,18 +151,32 @@ export default class BabelParser implements Parser {
     const identifiers = []
 
     traverse(ast, {
+      TSTypeAliasDeclaration(path: NodePath) {
+        const { scope } = path
+        if (!scope) return
+        scope.registerBinding('type', path.get('id'))
+      },
+    })
+
+    traverse(ast, {
       Identifier(path: NodePath) {
         const { node, scope, parent, parentPath } = path
         if (!scope || !parent || !parentPath) return
-        if (builtinIdentifiers.has(node.name)) return
-
         if (scope.getBinding(node.name)) return
 
         let isType = false
 
         switch (parent.type) {
+          case 'TSFunctionType':
+            if (parent.parameters.includes(node)) return
+            break
           case 'GenericTypeAnnotation':
+          case 'TSTypeReference':
             isType = true
+            break
+          case 'TSQualifiedName':
+            if (parent.right === node) return
+            isType = parent.left === node
             break
           case 'QualifiedTypeIdentifier':
             if (parent.id === node) return
@@ -166,9 +199,11 @@ export default class BabelParser implements Parser {
             if (parentPath.parent && parentPath.parent.source) return
             if (parent.exported === node) return
             break
+          case 'TSTypeAliasDeclaration':
           case 'ObjectTypeIndexer':
           case 'TypeAlias':
           case 'ClassDeclaration':
+          case 'TSInterfaceDeclaration':
           case 'VariableDeclarator':
             if (parent.id === node) return
             break
@@ -199,7 +234,16 @@ export default class BabelParser implements Parser {
             break
         }
 
-        if (isType && lookupTypeParameter(path, node.name)) return
+        if (isType) {
+          if (isTypeScript) {
+            if (typescriptTypeIdentifiers.has(node.name)) return
+          } else {
+            if (flowTypeIdentifiers.has(node.name)) return
+          }
+          if (lookupTypeParameter(path, node.name)) return
+        } else {
+          if (builtinIdentifiers.has(node.name)) return
+        }
 
         const { name: identifier, loc } = node
         if (loc && loc.start && loc.start.line != null) {

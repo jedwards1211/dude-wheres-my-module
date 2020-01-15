@@ -316,6 +316,32 @@ describe(`FlowParser`, function() {
       })
       expect(found).to.have.lengthOf(0)
     })
+    it(`qualified type issue`, function() {
+      const parser = new FlowParser()
+      const found = parser.getUndefinedIdentifiers({
+        code: `
+        import * as React from 'react'
+        import Typography from '@material-ui/core/Typography'
+        import { withStyles, WithStyles } from '@material-ui/core/styles'
+
+        const styles = {
+          root: {
+            margin: '0 auto',
+            maxWidth: 800,
+          },
+        }
+
+        const Root = ({ classes }: WithStyles<typeof styles>): React.ReactNode => (
+          <div className={classes.root}>
+            <Typography variant="h3">Survey Data Entry</Typography>
+          </div>
+        )
+
+        export default withStyles(styles)(Root)
+        `,
+      })
+      expect(found).to.have.lengthOf(0)
+    })
   })
   describe(`parse`, function() {
     it(`ignores shadowed require calls`, async function(): Promise<void> {
