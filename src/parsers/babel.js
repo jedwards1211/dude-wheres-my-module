@@ -156,6 +156,11 @@ export default class BabelParser implements Parser {
         if (!scope) return
         scope.registerBinding('type', path.get('id'))
       },
+      TSInterfaceDeclaration(path: NodePath) {
+        const { scope } = path
+        if (!scope) return
+        scope.registerBinding('type', path.get('id'))
+      },
     })
 
     traverse(ast, {
@@ -206,6 +211,9 @@ export default class BabelParser implements Parser {
           case 'TSInterfaceDeclaration':
           case 'VariableDeclarator':
             if (parent.id === node) return
+            break
+          case 'TSPropertySignature':
+            if (parent.key === node) return
             break
           case 'ObjectMethod':
           case 'ClassMethod':

@@ -816,6 +816,33 @@ describe(`BabelParser`, function() {
         })
         expect(found).to.deep.equal([])
       })
+      it(`interface declaration`, function() {
+        const found = parser.getUndefinedIdentifiers({
+          code: `
+          interface Foo {
+
+          }
+
+          function foo(): Foo {
+
+          }
+        `,
+          file: testFile,
+        })
+        expect(found).to.deep.equal([])
+      })
+      it(`interface members`, function() {
+        const found = parser.getUndefinedIdentifiers({
+          code: `
+          interface Foo {
+            bar: number
+            baz: string
+          }
+        `,
+          file: testFile,
+        })
+        expect(found).to.deep.equal([])
+      })
     })
   })
   describe(`parse`, function() {
