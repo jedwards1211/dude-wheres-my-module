@@ -5,19 +5,17 @@
 
 import { pick } from 'lodash'
 import { type ImportSpecifier } from '../ASTTypes'
+import resolveInDir from '../util/resolveInDir'
 
 export default function* babelConvertRequiresToImports(
   ast: any,
   { projectDirectory }: { projectDirectory: string }
 ): Iterable<ImportSpecifier> {
   // $FlowFixMe
-  const t = require(require.resolve('@babel/types', {
-    paths: [projectDirectory],
-  }))
+  const t = require(resolveInDir('@babel/types', projectDirectory))
   // $FlowFixMe
-  const traverse = require(require.resolve('@babel/traverse', {
-    paths: [projectDirectory],
-  })).default
+  const traverse = require(resolveInDir('@babel/traverse', projectDirectory))
+    .default
 
   function* convertObjectPatternToImportSpecifiers(
     pattern: any

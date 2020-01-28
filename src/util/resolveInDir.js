@@ -14,7 +14,7 @@ function getRootDir(file: string): string {
 export default function resolveInDir(request: string, dir: string): string {
   const forRequest = cache.get(request)
   if (!forRequest) {
-    const resolved = resolve.sync(request, { paths: [dir] })
+    const resolved = resolve.sync(request, { basedir: dir })
     cache.set(request, new Map([[getRootDir(resolved), resolved]]))
     return resolved
   }
@@ -24,7 +24,7 @@ export default function resolveInDir(request: string, dir: string): string {
     if (resolved) return resolved
   } while (parentDir !== '/')
 
-  const resolved = resolve.sync(request, { paths: [dir] })
+  const resolved = resolve.sync(request, { basedir: dir })
   forRequest.set(getRootDir(resolved), resolved)
   return resolved
 }

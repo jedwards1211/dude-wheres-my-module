@@ -3,12 +3,14 @@
  * @prettier
  */
 
+import resolveInDir from './util/resolveInDir'
+
 export default function hasBabel(projectDirectory: string): boolean {
   try {
     // $FlowFixMe
-    require.resolve('@babel/core', { paths: [projectDirectory] })
+    resolveInDir('@babel/core', projectDirectory)
     // $FlowFixMe
-    require.resolve('@babel/traverse', { paths: [projectDirectory] })
+    resolveInDir('@babel/traverse', projectDirectory)
   } catch (error) {
     return false
   }

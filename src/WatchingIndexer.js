@@ -1,4 +1,3 @@
-#!/usr/bin/env babel-node
 // @flow
 
 import path from 'path'
@@ -14,6 +13,7 @@ import throttle from 'lodash/throttle'
 import isConfigFile from './isConfigFile'
 import console from './console'
 import fs from 'fs-extra'
+import extensions from './extensions'
 
 export type Progress = { completed: number, total: number }
 
@@ -149,14 +149,7 @@ export default class WatchingIndexer extends EventEmitter<Events> {
     const ignoreFiles = await loadIgnoreFiles({ projectRoot })
     ignoreFiles.forEach(file => console.error('[dwmm] ignoring:', file)) // eslint-disable-line no-console
     this.watcher = chokidar.watch(
-      [
-        '**/*.js',
-        '**/*.mjs',
-        '**/.dude-wheres-my-module.js',
-        '**/*.jsx',
-        '**/*.ts',
-        '**/*.tsx',
-      ],
+      [...extensions.map(ext => `**/*${ext}`), '**/.dude-wheres-my-module.js'],
       {
         ignored: [
           ...ignoreFiles,

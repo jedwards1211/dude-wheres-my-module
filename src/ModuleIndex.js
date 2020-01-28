@@ -3,7 +3,6 @@
 import path from 'path'
 import isConfigFile from './isConfigFile'
 import console from './console'
-
 import type {
   Kind,
   ImportDeclaration,
@@ -18,6 +17,8 @@ import type {
   InterfaceDeclaration,
   TypeAlias,
 } from './ASTTypes'
+import extensions from './extensions'
+import resolve from 'resolve'
 
 export opaque type IdentifierName = string | typeof NAMESPACE
 
@@ -262,8 +263,8 @@ export default class ModuleIndex {
           if (
             pkg &&
             // $FlowFixMe
-            require.resolve(pkg, {
-              paths: [this.projectRoot],
+            resolve.sync(pkg, {
+              basedir: this.projectRoot,
             }) === exportInfo.file
           ) {
             request = pkg
@@ -417,8 +418,9 @@ export default class ModuleIndex {
     let sourceFile
     try {
       // $FlowFixMe
-      sourceFile = require.resolve(source.value, {
-        paths: [path.dirname(_module.file)],
+      sourceFile = resolve.sync(source.value, {
+        basedir: path.dirname(_module.file),
+        extensions,
       })
       if (!path.isAbsolute(sourceFile)) return
     } catch (err) {
@@ -559,8 +561,9 @@ export default class ModuleIndex {
     let file: string
     try {
       // $FlowFixMe
-      file = require.resolve(declareModule.id.value, {
-        paths: [this.projectRoot],
+      file = resolve.sync(declareModule.id.value, {
+        basedir: this.projectRoot,
+        extensions,
       })
     } catch (error) {
       return
