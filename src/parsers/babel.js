@@ -81,8 +81,10 @@ export default class BabelParser implements Parser {
     const babel = require(resolveInDir('@babel/core', projectDirectory))
 
     const ast = babel.parse(code, {
+      ...this.options,
       cwd: projectDirectory,
       filename: file,
+      rootMode: 'upward-optional',
     })
 
     const { comments, program } = ast
@@ -328,17 +330,17 @@ export default class BabelParser implements Parser {
     const projectDirectory = findRoot(file)
 
     // $FlowFixMe
-    const babel = require(require.resolve('@babel/core', {
-      paths: [projectDirectory],
-    }))
+    const babel = require(resolveInDir('@babel/core', projectDirectory))
+
     // $FlowFixMe
-    const traverse = require(require.resolve('@babel/traverse', {
-      paths: [projectDirectory],
-    })).default
+    const traverse = require(resolveInDir('@babel/traverse', projectDirectory))
+      .default
 
     const ast = await babel.parseAsync(code, {
+      ...this.options,
       cwd: projectDirectory,
       filename: file,
+      rootMode: 'upward-optional',
     })
 
     function* declarations(): Iterable<
