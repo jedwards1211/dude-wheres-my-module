@@ -10,13 +10,12 @@ import type {
 import type { Parser, UndefinedIdentifier } from './Parser'
 import jscodeshift from 'jscodeshift'
 import builtinIdentifiers from '../util/builtinIdentifiers'
-
 import babelConvertRequiresToImports from './babelConvertRequiresToImports'
-
 import findRoot from 'find-root'
 import { type VariableDeclaration } from '../ASTTypes'
 import typescriptTypeIdentifiers from '../util/typescriptTypeIdentifiers'
 import flowTypeIdentifiers from '../util/flowTypeIdentifiers'
+import resolveInDir from '../util/resolveInDir'
 const j = jscodeshift.withParser('babylon')
 
 type Node = Object
@@ -79,9 +78,7 @@ export default class BabelParser implements Parser {
     const projectDirectory = findRoot(file)
 
     // $FlowFixMe
-    const babel = require(require.resolve('@babel/core', {
-      paths: [projectDirectory],
-    }))
+    const babel = require(resolveInDir('@babel/core', projectDirectory))
 
     const ast = babel.parse(code, {
       cwd: projectDirectory,
@@ -134,18 +131,17 @@ export default class BabelParser implements Parser {
     const isTypeScript = file && /\.tsx?/i.test(file)
 
     // $FlowFixMe
-    const babel = require(require.resolve('@babel/core', {
-      paths: [projectDirectory],
-    }))
+    const babel = require(resolveInDir('@babel/core', projectDirectory))
     // $FlowFixMe
-    const traverse = require(require.resolve('@babel/traverse', {
-      paths: [projectDirectory],
-    })).default
+    const traverse = require(resolveInDir('@babel/traverse', projectDirectory))
+      .default
 
     const ast = babel.parse(code, {
       ...this.options,
       cwd: projectDirectory,
       filename: file,
+      // without this, babel won't search upward for a config file
+      rootMode: 'upward-optional',
     })
 
     const lines = code.split(/\r\n?|\n/gm)
