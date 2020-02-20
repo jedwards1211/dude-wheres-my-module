@@ -12,9 +12,8 @@ As far as I can tell this is currently the only tool that can write not just
 ordinary JS import and require statements but also Flow type import statements
 for you too.
 
-I'm using it with a cobbled-together [`atom-morpher`](https://github.com/suchipi/atom-morpher)
-transform to run it in Atom. Hopefully I'll make a more first-class Atom
-or VSCode plugin soon.
+I've created [Atom](https://atom.io/packages/import-it) and [VSCode](https://marketplace.visualstudio.com/items?itemName=vscode-dude-wheres-my-module.vscode-dude-wheres-my-module) extensions for using this,
+you probably won't want to use this package directly unless you're creating an extension for another IDE.
 
 # Table of Contents
 
@@ -44,6 +43,17 @@ or VSCode plugin soon.
 
 <!-- tocstop -->
 
+# Why other tools are lame
+
+- AFAICT VSCode can't even suggest default or namespace imports.
+- If you have `import {foo as bar} from 'foo'` in one file, VSCode/WebStorm won't suggest this for `bar` in another file.
+- And of course, VSCode has no support for Flow `import type` and `import {type ...}`
+
+# Where `dude-where-my-module` currently lags behind
+
+The main thing is it doesn't currently scan exports in your `dependencies`/`flow-typed`/`@types` etc.
+But once you have `import chalk from 'chalk'` in your code, it can suggest that for `chalk` in other files.
+
 # Features
 
 - Server that watches/indexes your import and require statements in the
@@ -60,13 +70,12 @@ or VSCode plugin soon.
 - Supports `import` statements
 - Supports Flow `import type` and `import {type ...}` statements
 
-# Limitations/Known Issues
+# Other Limitations/Known Issues
 
 This project is getting pretty solid, but there are still a few issues.
 
 - There are a few cases where obsolete suggested imports
   stick around after you delete them from the file `dude-wheres-my-module` got them from, or delete that file entirely.
-- `dude-wheres-my-module` doesn't automatically try to figure out what imports are available from packages in your `node_modules` yet. But the good news is that if you've imported something once in one file, it will be available in suggestions for other files. You can also manually configure preferred imports from packages in `node_modules`
 - It can't currently use Flow type information to rule out invalid suggestions (or decide that the way you're using a built-in idea identifier seems to indicate you meant to import something)
 
 # Installation
