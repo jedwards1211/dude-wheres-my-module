@@ -22,7 +22,8 @@ export default function resolveInDir(request: string, dir: string): string {
   do {
     const resolved = forRequest.get(parentDir)
     if (resolved) return resolved
-  } while (parentDir !== '/')
+    parentDir = path.dirname(parentDir)
+  } while (parentDir && parentDir !== '/')
 
   const resolved = resolve.sync(request, { basedir: dir })
   forRequest.set(getRootDir(resolved), resolved)
