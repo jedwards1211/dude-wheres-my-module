@@ -81,7 +81,7 @@ This project is getting pretty solid, but there are still a few issues.
 # Installation
 
 ```sh
-npm install --global dude-wheres-my-module
+npm i -g dude-wheres-my-module
 ```
 
 # CLI Commands
