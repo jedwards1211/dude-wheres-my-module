@@ -7,16 +7,16 @@ import { describe, it } from 'mocha'
 import { expect } from 'chai'
 
 import FlowParser from '../parsers/flow'
-import ModuleIndex from '../ModuleIndex'
+import SuggestedImportIndex from '../SuggestedImportIndex'
 import path from 'path'
 import WatchingIndexer from '../WatchingIndexer'
 
 describe(`WatchingIndexer`, function() {
   describe(`loadNatives`, function() {
-    it(`loaded natives are found by ModuleIndex`, async function(): Promise<void> {
+    it(`loaded natives are found by SuggestedImportIndex`, async function(): Promise<void> {
       const projectRoot = path.resolve(__dirname, '..', '..')
       const parser = new FlowParser()
-      const index = new ModuleIndex({
+      const index = new SuggestedImportIndex({
         projectRoot,
       })
       const watcher = new WatchingIndexer({
@@ -26,10 +26,10 @@ describe(`WatchingIndexer`, function() {
       })
       await watcher.loadNatives()
       expect(
-        index.getSuggestedImports({ file: __filename, identifier: 'spawn' })
+        index.suggest({ file: __filename, identifier: 'spawn' })
       ).to.deep.equal([{ code: 'import { spawn } from "child_process"' }])
       expect(
-        index.getSuggestedImports({ file: __filename, identifier: 'vm' })
+        index.suggest({ file: __filename, identifier: 'vm' })
       ).to.deep.equal([{ code: 'import vm from "vm"' }])
     })
   })

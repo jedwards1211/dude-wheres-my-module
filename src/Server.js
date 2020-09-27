@@ -2,7 +2,7 @@
 
 import './checkNodeVersion'
 import '@babel/polyfill'
-import ModuleIndex from './ModuleIndex'
+import SuggestedImportIndex from './SuggestedImportIndex'
 import WatchingIndexer from './WatchingIndexer'
 import FlowParser from './parsers/flow'
 import type { Progress } from './WatchingIndexer'
@@ -83,7 +83,7 @@ const touchInterval = setInterval(() => {
 fs.writeFileSync(files.pids, `${process.pid}\tserver`, 'utf8')
 
 const parser = hasBabel(projectRoot) ? new BabelParser() : new FlowParser()
-const index = new ModuleIndex({ projectRoot })
+const index = new SuggestedImportIndex({ projectRoot })
 const indexer = new WatchingIndexer({
   projectRoot,
   index,
@@ -184,7 +184,7 @@ server.on('connection', (sock: net.Socket) => {
         const result = {
           [identifier]: {
             identifier,
-            suggested: index.getSuggestedImports({ file, identifier }),
+            suggested: index.suggest({ file, identifier }),
           },
         }
         message = {

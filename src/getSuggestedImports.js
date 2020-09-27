@@ -5,8 +5,8 @@
 
 import type { Parser, UndefinedIdentifier } from './parsers/Parser'
 import type ModuleIndex, {
-  SuggestedImportResult as BaseResult,
-} from './ModuleIndex'
+  SuggestResult as BaseResult,
+} from './SuggestedImportIndex'
 
 import { type ImportDeclaration } from './ASTTypes'
 
@@ -39,7 +39,7 @@ export default function getSuggestedImports({
   for (let undefinedIdentifier of undefinedIdentifiers) {
     const { identifier, kind } = undefinedIdentifier
     const suggested = index
-      .getSuggestedImports({
+      .suggest({
         identifier,
         file,
         kind,

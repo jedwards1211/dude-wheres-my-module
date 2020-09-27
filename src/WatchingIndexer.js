@@ -4,7 +4,9 @@ import path from 'path'
 import { spawn } from 'child_process'
 import type { Parser } from './parsers/Parser'
 import chokidar from 'chokidar'
-import ModuleIndex from './ModuleIndex'
+import SuggestedImportIndex, {
+  SuggestedImportSource,
+} from './SuggestedImportIndex'
 import FlowParser from './parsers/flow'
 import { loadIgnoreFiles } from './gitignoreToChokidar'
 import EventEmitter from '@jcoreio/typed-event-emitter'
@@ -27,7 +29,7 @@ type Events = {
 export default class WatchingIndexer extends EventEmitter<Events> {
   projectRoot: string
   parser: Parser
-  index: ModuleIndex
+  index: SuggestedImportIndex
   watcher: any
   gotReady: boolean = false
   allFiles: Set<string> = new Set()
@@ -40,7 +42,7 @@ export default class WatchingIndexer extends EventEmitter<Events> {
   }: {
     projectRoot: string,
     parser: Parser,
-    index: ModuleIndex,
+    index: SuggestedImportIndex,
   }) {
     super()
     this.projectRoot = projectRoot
@@ -124,20 +126,24 @@ export default class WatchingIndexer extends EventEmitter<Events> {
     })
     const natives = JSON.parse(Buffer.concat(chunks).toString('utf8'))
     const { index } = this
-    for (let key in natives) {
-      index.addExport(key, {
-        file: key,
-        kind: 'value',
-        identifier: ('default': any),
-        source: 'natives',
-      })
-      for (let identifier of natives[key]) {
-        index.addExport(identifier, {
-          file: key,
+    for (const key in natives) {
+      index.addSuggestion(
+        new SuggestedImportSource({
           kind: 'value',
-          identifier,
-          source: 'natives',
+          imported: 'default',
+          importAs: key,
+          from: key,
         })
+      )
+      for (const identifier of natives[key]) {
+        index.addSuggestion(
+          new SuggestedImportSource({
+            kind: 'value',
+            imported: identifier,
+            importAs: identifier,
+            from: key,
+          })
+        )
       }
     }
   }
@@ -206,14 +212,14 @@ export default class WatchingIndexer extends EventEmitter<Events> {
 if (!module.parent) {
   const projectRoot = process.cwd()
   const parser = new FlowParser()
-  const index = new ModuleIndex({ projectRoot })
+  const index = new SuggestedImportIndex({ projectRoot })
 
   const watcher = new WatchingIndexer({ projectRoot, parser, index })
   watcher.start()
   process.stdin.on('data', (query: Buffer) => {
     const identifier = query.toString('utf8').trim()
     index
-      .getSuggestedImports({
+      .suggest({
         identifier,
         file: path.join(projectRoot, 'index.js'),
       })
