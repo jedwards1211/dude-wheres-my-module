@@ -1,4 +1,4 @@
-import { SuggestedImportResult as BaseResult } from './ModuleIndex'
+import { SuggestResult as BaseResult } from './SuggestedImportIndex'
 
 import { ImportDeclaration, Kind } from './ASTTypes'
 
