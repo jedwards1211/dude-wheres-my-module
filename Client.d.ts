@@ -4,7 +4,7 @@ import {
   SuggestedImportsResult,
   SuggestedImportResult,
 } from './getSuggestedImports'
-import { SuggestMessage, WheresMessage } from './Server'
+import { SuggestMessage, WheresMessage } from './DudeServer'
 
 declare class Client extends EventEmitter {
   constructor(projectRoot: string)

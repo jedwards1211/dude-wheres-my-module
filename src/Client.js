@@ -9,7 +9,7 @@ import stream from 'stream'
 import JSONStream from 'JSONStream'
 import EventEmitter from '@jcoreio/typed-event-emitter'
 import findRoot from 'find-root'
-import { type SuggestMessage, type WheresMessage } from './Server'
+import { type SuggestMessage, type WheresMessage } from './DudeServer'
 import { type SuggestResult } from './SuggestedImportIndex'
 import poll from '@jcoreio/poll'
 import emitted from 'p-event'
@@ -66,7 +66,7 @@ export default class Client extends EventEmitter<Events> {
       if (!/node$/.test(command)) command = 'node'
       const server = spawn(
         command,
-        [require.resolve('./Server'), this.projectRoot],
+        [require.resolve('./DudeServer'), this.projectRoot],
         {
           detached: true,
           stdio: 'ignore',
