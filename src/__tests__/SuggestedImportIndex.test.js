@@ -56,27 +56,18 @@ describe('SuggestedImportIndex', function() {
       ).to.containSubset([{ code: 'import { type Kind } from "../ASTTypes"' }])
 
       expect(
-        index.suggest({ identifier: 'SuggestedImportIndex' })
+        index.suggest({ identifier: 'SuggestedImportIndex', file: __filename })
       ).to.deep.equal([
         {
-          code:
-            'import SuggestedImportIndex from "/Users/andy/dude-wheres-my-module/src/SuggestedImportIndex"',
-        },
-      ])
-
-      expect(index.suggest({ identifier: 'Kind' })).to.deep.equal([
-        {
-          code:
-            'import { type Kind } from "/Users/andy/dude-wheres-my-module/src/ASTTypes"',
+          code: 'import SuggestedImportIndex from "../SuggestedImportIndex"',
         },
       ])
 
       expect(
-        index.suggest({ identifier: 'SuggestedImportSource' })
+        index.suggest({ identifier: 'Kind', file: __filename })
       ).to.deep.equal([
         {
-          code:
-            'import { SuggestedImportSource } from "/Users/andy/dude-wheres-my-module/src/SuggestedImportIndex"',
+          code: 'import { type Kind } from "../ASTTypes"',
         },
       ])
     })
