@@ -264,10 +264,10 @@ export default class SuggestedImportIndex {
   }
 
   _resolveFrom(importingFile: ?string, from: string): string {
-    from = from.replace(/(\/index)?\.[^/]+$/, '')
-    if (from.startsWith(this.nodeModulesDir)) {
-      from = path.relative(this.nodeModulesDir, from)
-      const match = /^(@[^/]+\/)?[^/]+/.exec(from)
+    let result = from.replace(/(\/index)?\.[^/]+$/, '')
+    if (result.startsWith(this.nodeModulesDir)) {
+      result = path.relative(this.nodeModulesDir, result)
+      const match = /^(@[^/]+\/)?[^/]+/.exec(result)
       const pkg = match && match[0]
       try {
         if (
@@ -277,16 +277,16 @@ export default class SuggestedImportIndex {
             basedir: this.projectRoot,
           }) === from
         ) {
-          from = pkg
+          result = pkg
         }
       } catch (error) {
         // ignore; maybe a nonexistent import we want to suggest anyway
       }
-    } else if (path.isAbsolute(from) && importingFile) {
-      from = path.relative(path.dirname(importingFile), from)
-      if (!from.startsWith('.')) from = `./${from}`
+    } else if (path.isAbsolute(result) && importingFile) {
+      result = path.relative(path.dirname(importingFile), result)
+      if (!result.startsWith('.')) result = `./${result}`
     }
-    return from
+    return result
   }
 
   suggest(options: SuggestOptions): SuggestResults {
