@@ -14,6 +14,13 @@ import { type SuggestResult } from './SuggestedImportIndex'
 import poll from '@jcoreio/poll'
 import emitted from 'p-event'
 
+import {
+  EXIT_CODE_INVALID_ARGS,
+  EXIT_CODE_PROJECT_DIR_DOESNT_EXIST,
+  EXIT_CODE_ANOTHER_SERVER_IS_RUNNING,
+  EXIT_CODE_KILLED_BY_CLIENT,
+} from './exitCodes'
+
 export type Message = {
   seq: number,
   suggest?: SuggestMessage,
@@ -64,13 +71,57 @@ export default class Client extends EventEmitter<Events> {
       this.emit('starting')
       let command = process.env.DWMM_TEST ? 'babel-node' : process.execPath
       if (!/node$/.test(command)) command = 'node'
-      const server = spawn(
-        command,
-        [require.resolve('./DudeServer'), this.projectRoot],
-        {
-          detached: true,
-          stdio: 'ignore',
-          cwd: this.projectRoot,
+      const args = [require.resolve('./DudeServer'), this.projectRoot]
+      const server = spawn(command, args, {
+        detached: true,
+        stdio: 'ignore',
+        cwd: this.projectRoot,
+      })
+
+      const serverExited = new Promise(
+        (resolve: any => void, reject: Error => void) => {
+          server.once('error', (error: Error) => {
+            error = new Error(`error spawning server: ${error.message}`)
+            if (client) client.emit('error', error)
+            reject(error)
+          })
+          server.once('exit', (code: ?number, signal: ?string) => {
+            try {
+              if (code) {
+                if (code > 128) {
+                  throw new Error(
+                    `server shutdown after receiving signal ${code - 128}`
+                  )
+                }
+                switch (code) {
+                  case 0:
+                    throw new Error(`server was stopped by client request`)
+                  case EXIT_CODE_INVALID_ARGS:
+                    throw new Error(
+                      `invalid arguments to server: ${args.slice(1).join(' ')}`
+                    )
+                  case EXIT_CODE_PROJECT_DIR_DOESNT_EXIST:
+                    throw new Error(
+                      `project directory doesn't exist: ${this.projectRoot}`
+                    )
+                  case EXIT_CODE_ANOTHER_SERVER_IS_RUNNING:
+                    throw new Error(
+                      `another server is already running, but failed to connect to it`
+                    )
+                  case EXIT_CODE_KILLED_BY_CLIENT:
+                    throw new Error(`server was killed by client request`)
+                }
+              }
+              throw new Error(
+                signal
+                  ? `server was killed with signal ${signal}`
+                  : `server exited with code ${String(code)}`
+              )
+            } catch (error) {
+              if (client) client.emit('error', error)
+              reject(error)
+            }
+          })
         }
       )
 
@@ -82,8 +133,7 @@ export default class Client extends EventEmitter<Events> {
           await connected(client)
           return client
         }, 1000).timeout(30000),
-        // fail immediately if the server process exits
-        emitted(server, '', { rejectionEvents: ['exit', 'error'] }),
+        serverExited,
       ])
     }
 
@@ -144,8 +194,11 @@ export default class Client extends EventEmitter<Events> {
           reject(error)
         }
 
-        this.callbacks.set(seq, { resolve: handleResult, reject: handleError })
-        client.on('error', handleError)
+        this.callbacks.set(seq, {
+          resolve: handleResult,
+          reject: handleError,
+        })
+        client.once('error', handleError)
         // $FlowFixMe
         this.outstream.write({ seq, ...message })
       }

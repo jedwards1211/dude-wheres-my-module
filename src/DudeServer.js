@@ -20,6 +20,13 @@ import BabelParser from './parsers/babel'
 import hasBabel from './hasBabel'
 import omit from 'lodash/omit'
 
+import {
+  EXIT_CODE_INVALID_ARGS,
+  EXIT_CODE_PROJECT_DIR_DOESNT_EXIST,
+  EXIT_CODE_ANOTHER_SERVER_IS_RUNNING,
+  EXIT_CODE_KILLED_BY_CLIENT,
+} from './exitCodes'
+
 export type SuggestMessage = {
   code?: ?string,
   file: string,
@@ -40,12 +47,12 @@ export type Message = {
 
 if (!process.argv[2]) {
   console.error(`Usage: ${process.argv[0]} ${process.argv[1]} <project dir>`) // eslint-disable-line no-console
-  process.exit(1)
+  process.exit(EXIT_CODE_INVALID_ARGS)
 }
 const projectRoot = findRoot(process.argv[2])
 if (!fs.pathExistsSync(projectRoot)) {
   console.error(`Project dir doesn't exist: ${projectRoot}`) // eslint-disable-line no-console
-  process.exit(2)
+  process.exit(EXIT_CODE_PROJECT_DIR_DOESNT_EXIST)
 }
 
 const files = tempFiles(projectRoot)
@@ -72,7 +79,7 @@ try {
   lockFile.lockSync(files.lock, { stale: 11000 })
 } catch (err) {
   console.error(`Another server is already running`) // eslint-disable-line no-console
-  process.exit(3)
+  process.exit(EXIT_CODE_ANOTHER_SERVER_IS_RUNNING)
 }
 
 const touchInterval = setInterval(() => {
@@ -118,10 +125,25 @@ async function cleanup(): Promise<void> {
   ])
 }
 
-async function handleSignal(signal: any): Promise<any> {
+function signalNumber(signal: string): number {
+  switch (signal) {
+    case 'SIGHUP':
+      return 1
+    case 'SIGINT':
+      return 2
+    case 'SIGQUIT':
+      return 3
+    case 'SIGTERM':
+      return 15
+    default:
+      throw new Error(`unsupported signal: ${signal}`)
+  }
+}
+
+async function handleSignal(signal: string): Promise<any> {
   console.error('[dwmm]', 'got signal:', signal)
   await cleanup()
-  process.exit(4)
+  process.exit(128 + signalNumber(signal))
 }
 
 process.on('SIGINT', handleSignal)
@@ -151,7 +173,7 @@ server.on('connection', (sock: net.Socket) => {
       sockets.clear()
       await promisify(cb => server.close(cb))
       await cleanup()
-      process.exit(5)
+      process.exit(EXIT_CODE_KILLED_BY_CLIENT)
     }
     if (suggest) {
       let message

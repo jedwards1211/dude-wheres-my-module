@@ -1,0 +1,6 @@
+// @flow
+
+export const EXIT_CODE_INVALID_ARGS = 1
+export const EXIT_CODE_PROJECT_DIR_DOESNT_EXIST = 2
+export const EXIT_CODE_ANOTHER_SERVER_IS_RUNNING = 3
+export const EXIT_CODE_KILLED_BY_CLIENT = 5
