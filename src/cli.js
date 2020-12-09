@@ -4,7 +4,7 @@
 import './checkNodeVersion'
 import yargs from 'yargs'
 import Client from './Client'
-import findRoot from 'find-root'
+import findRoot from './util/findRoot'
 import path from 'path'
 import { eraseStartLine, cursorLeft } from 'ansi-escapes'
 import chalk from 'chalk'

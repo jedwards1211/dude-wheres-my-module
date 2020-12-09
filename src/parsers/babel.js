@@ -11,7 +11,7 @@ import type { Parser, UndefinedIdentifier } from './Parser'
 import jscodeshift from 'jscodeshift'
 import builtinIdentifiers from '../util/builtinIdentifiers'
 import babelConvertRequiresToImports from './babelConvertRequiresToImports'
-import findRoot from 'find-root'
+import findRoot from '../util/findRoot'
 import { type VariableDeclaration } from '../ASTTypes'
 import typescriptTypeIdentifiers from '../util/typescriptTypeIdentifiers'
 import flowTypeIdentifiers from '../util/flowTypeIdentifiers'
@@ -75,7 +75,7 @@ export default class BabelParser implements Parser {
   }): 'import' | 'require' {
     if (file && /\.tsx?$/i.test(file)) return 'import'
 
-    const projectDirectory = findRoot(file)
+    const projectDirectory = findRoot(file || __dirname)
 
     // $FlowFixMe
     const babel = require(resolveInDir('@babel/core', projectDirectory))
@@ -128,7 +128,7 @@ export default class BabelParser implements Parser {
     code: string,
     file?: string,
   }): Array<UndefinedIdentifier> {
-    const projectDirectory = findRoot(file)
+    const projectDirectory = findRoot(file || __dirname)
 
     const isTypeScript = file && /\.tsx?/i.test(file)
 
@@ -335,7 +335,7 @@ export default class BabelParser implements Parser {
       )
     }
 
-    const projectDirectory = findRoot(file)
+    const projectDirectory = findRoot(file || __dirname)
 
     // $FlowFixMe
     const babel = require(resolveInDir('@babel/core', projectDirectory))

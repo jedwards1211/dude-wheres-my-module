@@ -6,7 +6,7 @@
 import { describe, it, after } from 'mocha'
 import { expect } from 'chai'
 import Client from '../Client'
-import findRoot from 'find-root'
+import findRoot from '../util/findRoot'
 
 const projectRoot = findRoot(process.cwd())
 const client = new Client(projectRoot)
