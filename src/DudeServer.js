@@ -16,9 +16,9 @@ import { promisify } from 'util'
 import findRoot from 'find-root'
 import getSuggestedImportsFn from './getSuggestedImports'
 import console, { stdout, stderr } from './console'
-
 import BabelParser from './parsers/babel'
 import hasBabel from './hasBabel'
+import omit from 'lodash/omit'
 
 export type SuggestMessage = {
   code?: ?string,
@@ -60,12 +60,15 @@ const logFile = fs.createWriteStream(files.log, 'utf8')
 stdout.pipe(logFile)
 stderr.pipe(logFile)
 
+console.error('[dwmm]', 'starting', { projectRoot, files })
+
 process.on('uncaughtException', err => console.error(err.stack))
 process.on('unhandledRejection', reason =>
   console.error((reason && reason.stack) || String(reason))
 )
 
 try {
+  console.error('[dwmm]', 'locking', files.lock)
   lockFile.lockSync(files.lock, { stale: 11000 })
 } catch (err) {
   console.error(`Another server is already running`) // eslint-disable-line no-console
@@ -132,7 +135,7 @@ server.on('connection', (sock: net.Socket) => {
   const instream = JSONStream.parse('*')
   const outstream = JSONStream.stringify()
   instream.on('data', async (message: Message) => {
-    console.error('[dwmm]', 'got message from client', message)
+    console.error('[dwmm]', 'got message from client', omit(message, 'code'))
     const { seq, suggest, wheres, stop, kill } = message
     if (stop) {
       console.error('[dwmm]', 'got stop request')
