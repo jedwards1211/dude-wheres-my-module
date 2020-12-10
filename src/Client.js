@@ -8,7 +8,7 @@ import { promisify } from 'util'
 import stream from 'stream'
 import JSONStream from 'JSONStream'
 import EventEmitter from '@jcoreio/typed-event-emitter'
-import findRoot from './util/findRoot'
+import { findRootSync } from './util/findRoot'
 import { type SuggestMessage, type WheresMessage } from './DudeServer'
 import { type SuggestResult } from './SuggestedImportIndex'
 import poll from '@jcoreio/poll'
@@ -53,7 +53,7 @@ export default class Client extends EventEmitter<Events> {
 
   constructor(projectRoot: string) {
     super()
-    this.projectRoot = findRoot(projectRoot)
+    this.projectRoot = findRootSync(projectRoot)
     this.instream = new JSONStream.parse('*')
     this.outstream = new JSONStream.stringify()
   }

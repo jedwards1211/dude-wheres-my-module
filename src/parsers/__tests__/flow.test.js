@@ -9,6 +9,20 @@ import recast from 'recast'
 
 import FlowParser from '../flow'
 
+import slurp from '../../util/slurp'
+
+import {
+  type ImportDeclaration,
+  type ExportNamedDeclaration,
+  type ExportDefaultDeclaration,
+  type ExportAllDeclaration,
+  type DeclareModule,
+} from '../../ASTTypes'
+
+import path from 'path'
+
+const testFile = path.join(__dirname, '__test.js')
+
 describe(`FlowParser`, function() {
   describe(`getMode`, function() {
     it(`defaults to require`, function() {
@@ -344,44 +358,57 @@ describe(`FlowParser`, function() {
     })
   })
   describe(`parse`, function() {
-    it(`ignores shadowed require calls`, async function(): Promise<void> {
+    async function parse({
+      code,
+    }: {
+      code: string,
+    }): Promise<
+      Array<
+        | ImportDeclaration
+        | ExportNamedDeclaration
+        | ExportDefaultDeclaration
+        | ExportAllDeclaration
+        | DeclareModule
+      >
+    > {
       const parser = new FlowParser()
+      return await slurp(parser.parse({ code, file: testFile }))
+    }
+
+    it(`ignores shadowed require calls`, async function(): Promise<void> {
       const code = `
       function require() {}
       const foo = require('foo')
       `
-      const decls = [...(await parser.parse({ code }))].map(
+      const decls = [...(await parse({ code }))].map(
         ast => recast.print(ast).code
       )
       expect(decls).to.deep.equal([])
     })
     it(`converts require default to ImportDeclaration`, async function(): Promise<void> {
-      const parser = new FlowParser()
       const code = `
       const foo = require('foo')
       `
-      const decls = [...(await parser.parse({ code }))].map(
+      const decls = [...(await parse({ code }))].map(
         ast => recast.print(ast).code
       )
       expect(decls).to.deep.equal([`import foo from "foo";`])
     })
     it(`converts destructured require to ImportDeclaration`, async function(): Promise<void> {
-      const parser = new FlowParser()
       const code = `
       const {foo, bar: baz} = require('foo')
       `
-      const decls = [...(await parser.parse({ code }))].map(
+      const decls = [...(await parse({ code }))].map(
         ast => recast.print(ast).code
       )
       expect(decls).to.deep.equal([`import { foo, bar as baz } from "foo";`])
     })
     it(`converts indirect destructured require to ImportDeclaration`, async function(): Promise<void> {
-      const parser = new FlowParser()
       const code = `
       const blah = require('foo')
       const {foo, bar: baz} = blah
       `
-      const decls = [...(await parser.parse({ code }))].map(
+      const decls = [...(await parse({ code }))].map(
         ast => recast.print(ast).code
       )
       expect(decls).to.deep.equal([
@@ -390,13 +417,12 @@ describe(`FlowParser`, function() {
       ])
     })
     it(`converts property access on require variable to ImportDeclaration`, async function(): Promise<void> {
-      const parser = new FlowParser()
       const code = `
       const blah = require('foo')
       blah.foo()
       blah.bar()
       `
-      const decls = [...(await parser.parse({ code }))].map(
+      const decls = [...(await parse({ code }))].map(
         ast => recast.print(ast).code
       )
       expect(decls).to.deep.equal([
@@ -406,21 +432,19 @@ describe(`FlowParser`, function() {
       ])
     })
     it(`converts direct property access on require to ImportDeclaration`, async function(): Promise<void> {
-      const parser = new FlowParser()
       const code = `
       require('foo').bar
       `
-      const decls = [...(await parser.parse({ code }))].map(
+      const decls = [...(await parse({ code }))].map(
         ast => recast.print(ast).code
       )
       expect(decls).to.deep.equal([`import { bar } from "foo";`])
     })
     it(`doesn't error on uninitialized declarators`, async function(): Promise<void> {
-      const parser = new FlowParser()
       const code = `
       let foo: ?Bar
       `
-      await parser.parse({ code })
+      await parse({ code })
     })
   })
 })

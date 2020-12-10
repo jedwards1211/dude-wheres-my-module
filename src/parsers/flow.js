@@ -271,17 +271,15 @@ export default class FlowParser implements Parser {
     return [...uniqIdentifiers.values()]
   }
 
-  async parse(options: {
+  async *parse(options: {
     code: string,
     file?: string,
-  }): Promise<
-    Iterable<
-      | ImportDeclaration
-      | ExportNamedDeclaration
-      | ExportDefaultDeclaration
-      | ExportAllDeclaration
-      | DeclareModule
-    >
+  }): AsyncIterable<
+    | ImportDeclaration
+    | ExportNamedDeclaration
+    | ExportDefaultDeclaration
+    | ExportAllDeclaration
+    | DeclareModule
   > {
     const { code } = options
 
@@ -294,27 +292,18 @@ export default class FlowParser implements Parser {
       esproposal_nullish_coalescing: true,
     })
 
-    function* declarations(): Iterable<
-      | ImportDeclaration
-      | ExportNamedDeclaration
-      | ExportDefaultDeclaration
-      | ExportAllDeclaration
-      | DeclareModule
-    > {
-      const body = ast.type === 'File' ? ast.program.body : ast.body
-      for (let declaration of body) {
-        switch (declaration.type) {
-          case 'ImportDeclaration':
-          case 'ExportNamedDeclaration':
-          case 'ExportDefaultDeclaration':
-          case 'ExportAllDeclaration':
-          case 'DeclareModule':
-            yield declaration
-            break
-        }
+    const body = ast.type === 'File' ? ast.program.body : ast.body
+    for (let declaration of body) {
+      switch (declaration.type) {
+        case 'ImportDeclaration':
+        case 'ExportNamedDeclaration':
+        case 'ExportDefaultDeclaration':
+        case 'ExportAllDeclaration':
+        case 'DeclareModule':
+          yield declaration
+          break
       }
-      yield* (convertRequiresToImports(ast): any)
     }
-    return declarations()
+    yield* (convertRequiresToImports(ast): any)
   }
 }

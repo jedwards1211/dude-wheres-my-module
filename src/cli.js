@@ -4,7 +4,7 @@
 import './checkNodeVersion'
 import yargs from 'yargs'
 import Client from './Client'
-import findRoot from './util/findRoot'
+import { findRootSync } from './util/findRoot'
 import path from 'path'
 import { eraseStartLine, cursorLeft } from 'ansi-escapes'
 import chalk from 'chalk'
@@ -15,7 +15,7 @@ import { isEmpty, flatMap } from 'lodash/fp'
 import emitted from 'p-event'
 import glob from 'glob'
 
-const projectRoot = findRoot(process.cwd())
+const projectRoot = findRootSync(process.cwd())
 const files = tempFiles(projectRoot)
 const client = new Client(projectRoot)
 

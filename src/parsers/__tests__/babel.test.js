@@ -8,6 +8,8 @@ import recast from 'recast'
 import BabelParser from '../babel'
 import path from 'path'
 
+import slurp from '../../util/slurp'
+
 const testFile = path.join(__dirname, '__test.js')
 
 describe(`BabelParser`, function() {
@@ -848,7 +850,7 @@ describe(`BabelParser`, function() {
   describe(`parse`, function() {
     async function parse({ code }) {
       const parser = new BabelParser()
-      return await parser.parse({ code, file: testFile })
+      return await slurp(parser.parse({ code, file: testFile }))
     }
 
     it(`ignores shadowed require calls`, async function(): Promise<void> {

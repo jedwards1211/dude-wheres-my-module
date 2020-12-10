@@ -12,14 +12,12 @@ import type {
 
 export interface Parser {
   getMode({ code: string, file?: string }): 'import' | 'require';
-  parse({ code: string, file?: string }): Promise<
-    Iterable<
-      | ImportDeclaration
-      | ExportNamedDeclaration
-      | ExportDefaultDeclaration
-      | ExportAllDeclaration
-      | DeclareModule
-    >
+  parse({ code: string, file?: string }): AsyncIterable<
+    | ImportDeclaration
+    | ExportNamedDeclaration
+    | ExportDefaultDeclaration
+    | ExportAllDeclaration
+    | DeclareModule
   >;
   importDeclaration(code: string): ImportDeclaration;
   requireDeclaration(code: string): VariableDeclaration;

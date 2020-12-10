@@ -21,12 +21,12 @@ describe('SuggestedImportIndex', function() {
       for (let file of await glob('src/**/*.js', { cwd: projectRoot })) {
         file = path.resolve(projectRoot, file)
         const code = await fs.readFile(file, 'utf8')
-        index.declareModule(file, await parser.parse({ code, file }))
+        await index.declareModule(file, parser.parse({ code, file }))
       }
       for (let file of await glob('test/**/*.js', { cwd: projectRoot })) {
         file = path.resolve(projectRoot, file)
         const code = await fs.readFile(file, 'utf8')
-        index.declareModule(file, await parser.parse({ code, file }))
+        await index.declareModule(file, parser.parse({ code, file }))
       }
 
       expect(
@@ -78,9 +78,9 @@ describe('SuggestedImportIndex', function() {
         projectRoot,
       })
 
-      index.declareModule(
+      await index.declareModule(
         path.join(__dirname, '..', '~test.js'),
-        await parser.parse({
+        parser.parse({
           code: `
           import glab from 'glab'
           import glomb from './glomb'
@@ -110,9 +110,9 @@ describe('SuggestedImportIndex', function() {
         projectRoot,
       })
 
-      index.declareModule(
+      await index.declareModule(
         path.join(__dirname, '..', '~test.js'),
-        await parser.parse({
+        parser.parse({
           code: `
           import foo from 'foo'
           import baz from './baz'
@@ -133,9 +133,9 @@ describe('SuggestedImportIndex', function() {
         })
       ).to.containSubset([{ code: 'import baz from "../baz"' }])
 
-      index.declareModule(
+      await index.declareModule(
         path.join(__dirname, '..', '~test.js'),
-        await parser.parse({
+        parser.parse({
           code: `
           import foo from 'bar'
           import baz from './qux'
@@ -175,9 +175,9 @@ describe('SuggestedImportIndex', function() {
         projectRoot,
       })
 
-      index.declareModule(
+      await index.declareModule(
         path.join(__dirname, '..', 'test.js'),
-        await parser.parse({
+        parser.parse({
           code: `
           export default class Foo {}
           export const bar = 'baz'
@@ -204,9 +204,9 @@ describe('SuggestedImportIndex', function() {
         })
       ).to.containSubset([{ code: 'import test from "../test"' }])
 
-      index.declareModule(
+      await index.declareModule(
         path.join(__dirname, '..', 'test.js'),
-        await parser.parse({
+        parser.parse({
           code: `
           export default class Bar {}
           export const qux = 'baz'

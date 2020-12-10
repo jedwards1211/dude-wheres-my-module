@@ -11,11 +11,11 @@ import type { Parser, UndefinedIdentifier } from './Parser'
 import jscodeshift from 'jscodeshift'
 import builtinIdentifiers from '../util/builtinIdentifiers'
 import babelConvertRequiresToImports from './babelConvertRequiresToImports'
-import findRoot from '../util/findRoot'
+import { findRoot, findRootSync } from '../util/findRoot'
 import { type VariableDeclaration } from '../ASTTypes'
 import typescriptTypeIdentifiers from '../util/typescriptTypeIdentifiers'
 import flowTypeIdentifiers from '../util/flowTypeIdentifiers'
-import resolveInDir from '../util/resolveInDir'
+import { resolveInDir, resolveInDirSync } from '../util/resolveInDir'
 const j = jscodeshift.withParser('babylon')
 
 type Node = Object
@@ -75,16 +75,15 @@ export default class BabelParser implements Parser {
   }): 'import' | 'require' {
     if (file && /\.tsx?$/i.test(file)) return 'import'
 
-    const projectDirectory = findRoot(file || __dirname)
+    const projectDirectory = findRootSync(file || __dirname)
 
     // $FlowFixMe
-    const babel = require(resolveInDir('@babel/core', projectDirectory))
+    const babel = require(resolveInDirSync('@babel/core', projectDirectory))
 
     const ast = babel.parse(code, {
       ...this.options,
       cwd: projectDirectory,
       filename: file,
-      rootMode: 'upward-optional',
     })
 
     const { comments, program } = ast
@@ -128,22 +127,22 @@ export default class BabelParser implements Parser {
     code: string,
     file?: string,
   }): Array<UndefinedIdentifier> {
-    const projectDirectory = findRoot(file || __dirname)
+    const projectDirectory = findRootSync(file || __dirname)
 
     const isTypeScript = file && /\.tsx?/i.test(file)
 
     // $FlowFixMe
-    const babel = require(resolveInDir('@babel/core', projectDirectory))
+    const babel = require(resolveInDirSync('@babel/core', projectDirectory))
     // $FlowFixMe
-    const traverse = require(resolveInDir('@babel/traverse', projectDirectory))
-      .default
+    const traverse = require(resolveInDirSync(
+      '@babel/traverse',
+      projectDirectory
+    )).default
 
     const ast = babel.parse(code, {
       ...this.options,
       cwd: projectDirectory,
       filename: file,
-      // without this, babel won't search upward for a config file
-      rootMode: 'upward-optional',
     })
 
     const lines = code.split(/\r\n?|\n/gm)
@@ -314,20 +313,18 @@ export default class BabelParser implements Parser {
     return [...uniqIdentifiers.values()]
   }
 
-  async parse({
+  async *parse({
     code,
     file,
   }: {
     code: string,
     file?: string,
-  }): Promise<
-    Iterable<
-      | ImportDeclaration
-      | ExportNamedDeclaration
-      | ExportDefaultDeclaration
-      | ExportAllDeclaration
-      | DeclareModule
-    >
+  }): AsyncIterable<
+    | ImportDeclaration
+    | ExportNamedDeclaration
+    | ExportDefaultDeclaration
+    | ExportAllDeclaration
+    | DeclareModule
   > {
     if (!file) {
       throw new Error(
@@ -335,45 +332,37 @@ export default class BabelParser implements Parser {
       )
     }
 
-    const projectDirectory = findRoot(file || __dirname)
+    const projectDirectory = await findRoot(file || __dirname)
 
     // $FlowFixMe
-    const babel = require(resolveInDir('@babel/core', projectDirectory))
+    const babel = require(await resolveInDir('@babel/core', projectDirectory))
 
     // $FlowFixMe
-    const traverse = require(resolveInDir('@babel/traverse', projectDirectory))
-      .default
+    const traverse = require(await resolveInDir(
+      '@babel/traverse',
+      projectDirectory
+    )).default
 
     const ast = await babel.parseAsync(code, {
       ...this.options,
       cwd: projectDirectory,
       filename: file,
-      rootMode: 'upward-optional',
     })
 
-    function* declarations(): Iterable<
-      | ImportDeclaration
-      | ExportNamedDeclaration
-      | ExportDefaultDeclaration
-      | ExportAllDeclaration
-      | DeclareModule
-    > {
-      const result = []
+    const result = []
 
-      const addPath = (path: NodePath) => {
-        result.push(path.node)
-      }
-
-      traverse(ast, {
-        ImportDeclaration: addPath,
-        ExportNamedDeclaration: addPath,
-        ExportDefaultDeclaration: addPath,
-        ExportAllDeclaration: addPath,
-        DeclareModule: addPath,
-      })
-      yield* result
-      yield* (babelConvertRequiresToImports(ast, { projectDirectory }): any)
+    const addPath = (path: NodePath) => {
+      result.push(path.node)
     }
-    return declarations()
+
+    traverse(ast, {
+      ImportDeclaration: addPath,
+      ExportNamedDeclaration: addPath,
+      ExportDefaultDeclaration: addPath,
+      ExportAllDeclaration: addPath,
+      DeclareModule: addPath,
+    })
+    for (const imp of result) yield imp
+    yield* (babelConvertRequiresToImports(ast, { projectDirectory }): any)
   }
 }

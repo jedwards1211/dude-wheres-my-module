@@ -18,11 +18,14 @@ import type {
   TypeAlias,
 } from './ASTTypes'
 import extensions from './extensions'
-import resolve from 'resolve'
+import _resolve from 'resolve'
 import identifierFromFilename from './util/identifierFromFilename'
 import lazy from './util/lazy'
 import some from './util/some'
 import sortBy from 'lodash/sortBy'
+import { promisify } from 'util'
+
+const resolve = promisify(_resolve)
 
 export type SuggestOptions = {|
   identifier: string,
@@ -376,40 +379,42 @@ export default class SuggestedImportIndex {
     this.modules.delete(file)
   }
 
-  declareModule(
+  async declareModule(
     file: string,
-    declarations: Iterable<
+    declarations: AsyncIterable<
       | ImportDeclaration
       | ExportNamedDeclaration
       | ExportDefaultDeclaration
       | ExportAllDeclaration
       | DeclareModule
     >
-  ) {
+  ): Promise<void> {
     requireAbsolute(file)
     this.undeclareModule(file)
-    const sources = [...this._convertDeclarations(file, declarations)]
+    const sources = []
+    for await (const source of this._convertDeclarations(file, declarations))
+      sources.push(source)
     const module = new Module({ file, sources })
     this.modules.set(file, module)
     for (const source of sources) this.addSuggestion(source)
   }
 
-  *_convertDeclarations(
+  async *_convertDeclarations(
     file: string,
-    declarations: Iterable<
+    declarations: AsyncIterable<
       | ImportDeclaration
       | ExportNamedDeclaration
       | ExportDefaultDeclaration
       | ExportAllDeclaration
       | DeclareModule
     >
-  ): Iterable<SuggestedImportSource> {
-    for (const declaration of declarations) {
+  ): AsyncIterable<SuggestedImportSource> {
+    for await (const declaration of declarations) {
       yield* this._convertDeclaration(file, declaration)
     }
   }
 
-  *_convertDeclaration(
+  async *_convertDeclaration(
     file: string,
     declaration:
       | ImportDeclaration
@@ -417,7 +422,7 @@ export default class SuggestedImportIndex {
       | ExportDefaultDeclaration
       | ExportAllDeclaration
       | DeclareModule
-  ): Iterable<SuggestedImportSource> {
+  ): AsyncIterable<SuggestedImportSource> {
     switch (declaration.type) {
       case 'ImportDeclaration': {
         yield* this._convertImportDeclaration(file, declaration)
@@ -442,15 +447,15 @@ export default class SuggestedImportIndex {
     }
   }
 
-  *_convertImportDeclaration(
+  async *_convertImportDeclaration(
     file: string,
     declaration: ImportDeclaration
-  ): Iterable<SuggestedImportSource> {
+  ): AsyncIterable<SuggestedImportSource> {
     const { specifiers, source } = declaration
     let sourceFile
     try {
       // $FlowFixMe
-      sourceFile = resolve.sync(source.value, {
+      sourceFile = await resolve(source.value, {
         basedir: path.dirname(file),
         extensions,
       })
@@ -497,10 +502,10 @@ export default class SuggestedImportIndex {
     }
   }
 
-  *_convertExportNamedDeclaration(
+  async *_convertExportNamedDeclaration(
     file: string,
     exportDeclaration: ExportNamedDeclaration
-  ): Iterable<SuggestedImportSource> {
+  ): AsyncIterable<SuggestedImportSource> {
     const { specifiers, declaration } = exportDeclaration
     let kind = exportDeclaration.exportKind || 'value'
     for (let specifier of specifiers) {
@@ -544,10 +549,10 @@ export default class SuggestedImportIndex {
     }
   }
 
-  *_convertExportDefaultDeclaration(
+  async *_convertExportDefaultDeclaration(
     file: string,
     exportDeclaration: ExportDefaultDeclaration
-  ): Iterable<SuggestedImportSource> {
+  ): AsyncIterable<SuggestedImportSource> {
     const { declaration } = exportDeclaration
     const importAs = identifierFromFilename(file)
     let kind = 'value'
@@ -576,20 +581,20 @@ export default class SuggestedImportIndex {
     })
   }
 
-  *_convertExportAllDeclaration(
+  async *_convertExportAllDeclaration(
     file: string,
     declaration: ExportAllDeclaration
-  ): Iterable<SuggestedImportSource> {
+  ): AsyncIterable<SuggestedImportSource> {
     // TODO
   }
 
-  *_convertDeclareModule(
+  async *_convertDeclareModule(
     declareModule: DeclareModule
-  ): Iterable<SuggestedImportSource> {
+  ): AsyncIterable<SuggestedImportSource> {
     let file: string
     try {
       // $FlowFixMe
-      file = resolve.sync(declareModule.id.value, {
+      file = await resolve(declareModule.id.value, {
         basedir: this.projectRoot,
         extensions,
       })

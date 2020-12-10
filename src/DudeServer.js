@@ -13,7 +13,7 @@ import touch from 'touch'
 import net from 'net'
 import tempFiles from './tempFiles'
 import { promisify } from 'util'
-import findRoot from './util/findRoot'
+import { findRootSync } from './util/findRoot'
 import getSuggestedImportsFn from './getSuggestedImports'
 import console, { stdout, stderr } from './console'
 import BabelParser from './parsers/babel'
@@ -49,7 +49,7 @@ if (!process.argv[2]) {
   console.error(`Usage: ${process.argv[0]} ${process.argv[1]} <project dir>`) // eslint-disable-line no-console
   process.exit(EXIT_CODE_INVALID_ARGS)
 }
-const projectRoot = findRoot(process.argv[2])
+const projectRoot = findRootSync(process.argv[2])
 if (!fs.pathExistsSync(projectRoot)) {
   console.error(`Project dir doesn't exist: ${projectRoot}`) // eslint-disable-line no-console
   process.exit(EXIT_CODE_PROJECT_DIR_DOESNT_EXIST)

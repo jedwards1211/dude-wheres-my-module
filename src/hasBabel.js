@@ -3,14 +3,14 @@
  * @prettier
  */
 
-import resolveInDir from './util/resolveInDir'
+import { resolveInDirSync } from './util/resolveInDir'
 
 export default function hasBabel(projectDirectory: string): boolean {
   try {
     // $FlowFixMe
-    resolveInDir('@babel/core', projectDirectory)
+    resolveInDirSync('@babel/core', projectDirectory)
     // $FlowFixMe
-    resolveInDir('@babel/traverse', projectDirectory)
+    resolveInDirSync('@babel/traverse', projectDirectory)
   } catch (error) {
     return false
   }

@@ -81,23 +81,25 @@ export default class WatchingIndexer extends EventEmitter<Events> {
         const configure = require(file)
         const { preferredImports } = (await configure()) || {}
         if (preferredImports) {
-          const declarations = []
-          for (let code of Array.isArray(preferredImports)
-            ? preferredImports
-            : [preferredImports]) {
-            try {
-              for (let declaration of await this.parser.parse({ code, file })) {
-                declarations.push(declaration)
+          await Promise.all(
+            (Array.isArray(preferredImports)
+              ? preferredImports
+              : [preferredImports]
+            ).map(async (code: string) => {
+              try {
+                await this.index.declareModule(
+                  file,
+                  await this.parser.parse({ code, file })
+                )
+              } catch (error) {
+                console.error('[dwmm] error:', error.stack)
               }
-            } catch (error) {
-              console.error('[dwmm] error:', error.stack)
-            }
-          }
-          this.index.declareModule(file, declarations)
+            })
+          )
         }
       } else {
         const code = await fs.readFile(file, 'utf8')
-        this.index.declareModule(file, await this.parser.parse({ code, file }))
+        await this.index.declareModule(file, this.parser.parse({ code, file }))
       }
     } catch (error) {
       console.error('[dwmm] error:', error.stack)
