@@ -150,7 +150,7 @@
     "fs-extra": "^7.0.1",
     "glob": "^7.1.6",
     "glob-gitignore": "^1.0.11",
-    "jscodeshift": "^0.5.1",
+    "jscodeshift": "^0.10.0",
     "lockfile": "^1.0.4",
     "lodash": "^4.17.11",
     "p-event": "^4.1.0",
