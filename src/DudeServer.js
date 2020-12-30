@@ -37,10 +37,13 @@ export type WheresMessage = {
   file: string,
 }
 
+export type WaitUntilReadyMessage = {}
+
 export type Message = {
   seq: number,
   suggest?: SuggestMessage,
   wheres?: WheresMessage,
+  waitUntilReady?: WaitUntilReadyMessage,
   stop?: boolean,
   kill?: boolean,
 }
@@ -158,7 +161,7 @@ server.on('connection', (sock: net.Socket) => {
   const outstream = JSONStream.stringify()
   instream.on('data', async (message: Message) => {
     console.error('[dwmm]', 'got message from client', omit(message, 'code'))
-    const { seq, suggest, wheres, stop, kill } = message
+    const { seq, waitUntilReady, suggest, wheres, stop, kill } = message
     if (stop) {
       console.error('[dwmm]', 'got stop request')
       for (const sock of sockets) await promisify(cb => sock.end(cb))
@@ -174,6 +177,20 @@ server.on('connection', (sock: net.Socket) => {
       await promisify(cb => server.close(cb))
       await cleanup()
       process.exit(EXIT_CODE_KILLED_BY_CLIENT)
+    }
+    if (waitUntilReady) {
+      try {
+        await indexer.waitUntilReady()
+        message = {}
+      } catch (error) {
+        console.error(error.stack) // eslint-disable-line no-console
+        message = {
+          seq,
+          error: error.stack,
+        }
+        outstream.write(message)
+      }
+      outstream.write(message)
     }
     if (suggest) {
       let message

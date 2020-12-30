@@ -205,6 +205,10 @@ export default class Client extends EventEmitter<Events> {
     )
   }
 
+  async waitUntilReady(): Promise<void> {
+    await this.request({ waitUntilReady: {} })
+  }
+
   async wheres(query: WheresMessage): Promise<Array<SuggestResult>> {
     const { wheres } = await this.request({
       wheres: query,
