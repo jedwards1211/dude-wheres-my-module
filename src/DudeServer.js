@@ -181,14 +181,13 @@ server.on('connection', (sock: net.Socket) => {
     if (waitUntilReady) {
       try {
         await indexer.waitUntilReady()
-        message = {}
+        message = { seq }
       } catch (error) {
         console.error(error.stack) // eslint-disable-line no-console
         message = {
           seq,
           error: error.stack,
         }
-        outstream.write(message)
       }
       outstream.write(message)
     }
