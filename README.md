@@ -74,6 +74,7 @@ But once you have `import chalk from 'chalk'` in your code, it can suggest that 
 
 This project is getting pretty solid, but there are still a few issues.
 
+- `dude-wheres-my-module` doesn't automatically try to figure out what imports are available from packages in your `node_modules` yet. But the good news is that if you've imported something once in one file, it will be available in suggestions for other files. You can also manually configure preferred imports from packages in `node_modules`
 - There are a few cases where obsolete suggested imports
   stick around after you delete them from the file `dude-wheres-my-module` got them from, or delete that file entirely.
 - It can't currently use Flow type information to rule out invalid suggestions (or decide that the way you're using a built-in idea identifier seems to indicate you meant to import something)
