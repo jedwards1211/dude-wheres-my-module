@@ -8,7 +8,7 @@ import SuggestedImportIndex, {
   SuggestedImportSource,
 } from './SuggestedImportIndex'
 import FlowParser from './parsers/flow'
-import { loadIgnoreFiles } from './gitignoreToChokidar'
+import loadIgnorePatterns from './loadIgnorePatterns'
 import EventEmitter from '@jcoreio/typed-event-emitter'
 import emitted from 'p-event'
 import throttle from 'lodash/throttle'
@@ -16,6 +16,7 @@ import isConfigFile from './isConfigFile'
 import console from './console'
 import fs from 'fs-extra'
 import extensions from './extensions'
+import createIgnore from 'ignore'
 
 export type Progress = { completed: number, total: number }
 
@@ -154,14 +155,19 @@ export default class WatchingIndexer extends EventEmitter<Events> {
     const { projectRoot } = this
 
     if (this.watcher) return
-    const ignoreFiles = await loadIgnoreFiles({ projectRoot })
-    ignoreFiles.forEach(file => console.error('[dwmm] ignoring:', file)) // eslint-disable-line no-console
+    const ignorePatterns = await loadIgnorePatterns({ projectRoot })
+    ignorePatterns.forEach(file => console.error('[dwmm] ignoring:', file)) // eslint-disable-line no-console
+    const ignore = createIgnore().add(ignorePatterns)
     this.watcher = chokidar.watch(
       [...extensions.map(ext => `**/*${ext}`), '**/.dude-wheres-my-module.js'],
       {
         ignored: [
-          ...ignoreFiles,
-          file => !isConfigFile(file) && /(^|[/\\])\../.test(file),
+          file =>
+            file === projectRoot
+              ? false
+              : !isConfigFile(file) &&
+                (/(^|[/\\])\../.test(file) ||
+                  ignore.ignores(path.relative(projectRoot, file))),
         ],
         cwd: this.projectRoot,
       }
