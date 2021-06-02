@@ -132,7 +132,7 @@
     "prettier-eslint": "^8.8.2",
     "recast": "^0.16.1",
     "rimraf": "^2.6.0",
-    "semantic-release": "^15.13.24",
+    "semantic-release": "^17.2.3",
     "typescript": "^3.7.2"
   },
   "dependencies": {
