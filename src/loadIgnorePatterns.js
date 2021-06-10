@@ -29,7 +29,7 @@ export default async function loadIgnorePatterns({
               path.relative(projectRoot, path.resolve(fileDir, pattern))
             )
           }
-          return patterns
+          return patterns.filter(p => /\S/.test(p))
         }
       )
     ))

@@ -158,20 +158,29 @@ export default class WatchingIndexer extends EventEmitter<Events> {
     const ignorePatterns = await loadIgnorePatterns({ projectRoot })
     ignorePatterns.forEach(file => console.error('[dwmm] ignoring:', file)) // eslint-disable-line no-console
     const ignore = createIgnore().add(ignorePatterns)
-    this.watcher = chokidar.watch(
-      [...extensions.map(ext => `**/*${ext}`), '**/.dude-wheres-my-module.js'],
-      {
-        ignored: [
-          file =>
-            file === projectRoot
+    const globs = [
+      ...extensions.map(ext => `**/*${ext}`),
+      '**/.dude-wheres-my-module.js',
+    ]
+    this.watcher = chokidar.watch(globs, {
+      ignored: [
+        (file: string, stats?: fs.Stats): boolean => {
+          if (!stats) return false
+          const relative = path.relative(projectRoot, file)
+          const result =
+            relative === '.' || relative === ''
               ? false
               : !isConfigFile(file) &&
                 (/(^|[/\\])\../.test(file) ||
-                  ignore.ignores(path.relative(projectRoot, file))),
-        ],
-        cwd: this.projectRoot,
-      }
-    )
+                  ignore.ignores(relative + (stats.isDirectory() ? '/' : '')))
+          return result
+        },
+      ],
+      cwd: this.projectRoot,
+    })
+    this.watcher.on('error', (err: Error) => {
+      console.error('[dwmm] ERROR:', err.stack) // eslint-disable-line no-console
+    })
     this.watcher.on('ready', () => {
       this.gotReady = true
       for (const file of this.allFiles) this.processFile(file)

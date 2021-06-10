@@ -61,10 +61,12 @@ if (!fs.pathExistsSync(projectRoot)) {
 const files = tempFiles(projectRoot)
 
 fs.mkdirpSync(files.dir)
-try {
-  fs.unlinkSync(files.sock)
-} catch (error) {
-  // ignore
+if (process.platform !== 'win32') {
+  try {
+    fs.unlinkSync(files.sock)
+  } catch (error) {
+    // ignore
+  }
 }
 const logFile = fs.createWriteStream(files.log, 'utf8')
 stdout.pipe(logFile)
@@ -120,12 +122,13 @@ async function cleanup(): Promise<void> {
   } catch (error) {
     console.error(error.stack)
   }
-  console.error('[dwmm]', 'removing', files.lock, files.sock, files.pids)
-  await Promise.all([
-    fs.remove(files.lock).catch(logError),
-    fs.remove(files.sock).catch(logError),
-    fs.remove(files.pids).catch(logError),
-  ])
+  const filesToRemove = [
+    files.lock,
+    files.pids,
+    ...(process.platform === 'win32' ? [] : [files.sock]),
+  ]
+  console.error('[dwmm]', 'removing', ...filesToRemove)
+  await Promise.all(filesToRemove.map(file => fs.remove(file).catch(logError)))
 }
 
 function signalNumber(signal: string): number {
