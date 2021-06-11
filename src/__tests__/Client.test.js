@@ -11,15 +11,15 @@ import { findRootSync } from '../util/findRoot'
 const projectRoot = findRootSync(process.cwd())
 const client = new Client(projectRoot)
 
-describe(`Client`, function() {
+describe(`Client`, function () {
   this.timeout(30000)
 
-  after(async function(): Promise<void> {
+  after(async function (): Promise<void> {
     this.timeout(10000)
     await client.close()
   })
 
-  it(`basic integration test`, async function(): Promise<void> {
+  it(`basic integration test`, async function (): Promise<void> {
     expect(
       await client.suggest({
         file: __filename,

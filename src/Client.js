@@ -2,6 +2,7 @@
 
 import type { Progress } from './WatchingIndexer'
 import net from 'net'
+import Path from 'path'
 import tempFiles from './tempFiles'
 import { spawn } from 'child_process'
 import { promisify } from 'util'
@@ -46,10 +47,8 @@ export default class Client extends EventEmitter<Events> {
   seq: number = 0
   instream: stream.Transform
   outstream: stream.Transform
-  callbacks: Map<
-    number,
-    { resolve: any => any, reject: Error => any }
-  > = new Map()
+  callbacks: Map<number, { resolve: (any) => any, reject: (Error) => any }> =
+    new Map()
 
   constructor(projectRoot: string) {
     super()
@@ -58,7 +57,7 @@ export default class Client extends EventEmitter<Events> {
     this.outstream = new JSONStream.stringify()
   }
 
-  _createClient = async (): Promise<net.Socket> => {
+  _createClient: () => Promise<net.Socket> = async (): Promise<net.Socket> => {
     const files = tempFiles(this.projectRoot)
 
     let client: net.Socket
@@ -69,7 +68,9 @@ export default class Client extends EventEmitter<Events> {
     } catch (error) {
       // seems like no server is running, spawn a new server
       this.emit('starting')
-      let command = process.env.DWMM_TEST ? 'babel-node' : process.execPath
+      let command = process.env.DWMM_TEST
+        ? Path.resolve(__dirname, '..', 'node_modules', '.bin', 'babel-node')
+        : process.execPath
       if (!/node$/.test(command)) command = 'node'
       const args = [require.resolve('./DudeServer'), this.projectRoot]
       const server = spawn(command, args, {
@@ -78,8 +79,8 @@ export default class Client extends EventEmitter<Events> {
         cwd: this.projectRoot,
       })
 
-      const serverExited = new Promise(
-        (resolve: any => void, reject: Error => void) => {
+      const serverExited: Promise<any> = new Promise(
+        (resolve: (any) => void, reject: (Error) => void) => {
           server.once('error', (error: Error) => {
             error = new Error(`error spawning server: ${error.message}`)
             if (client) client.emit('error', error)
@@ -128,7 +129,7 @@ export default class Client extends EventEmitter<Events> {
       client = await Promise.race([
         // keep trying to connect to the socket in case the server is
         // slow to start up
-        poll(async (): Promise<net.Socket> => {
+        poll<net.Socket>(async (): Promise<net.Socket> => {
           const client = net.createConnection(files.sock)
           await connected(client)
           return client
@@ -228,7 +229,7 @@ export default class Client extends EventEmitter<Events> {
       const client: net.Socket = await this.connect()
       // $FlowFixMe
       this.outstream.write({ stop: true })
-      await promisify(cb => client.end(cb))()
+      await promisify((cb) => client.end(cb))()
     } finally {
       this.client = null
     }
@@ -249,7 +250,7 @@ export default class Client extends EventEmitter<Events> {
     try {
       if (this.client) {
         const client = await this.client
-        await promisify(cb => client.end(cb))
+        await promisify((cb) => client.end(cb))
       }
     } catch (error) {
       // ignore

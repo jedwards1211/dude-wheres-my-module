@@ -15,6 +15,7 @@ import throttle from 'lodash/throttle'
 import isConfigFile from './isConfigFile'
 import console from './console'
 import fs from 'fs-extra'
+import { type Stats } from 'fs'
 import extensions from './extensions'
 import createIgnore from 'ignore'
 
@@ -117,13 +118,15 @@ export default class WatchingIndexer extends EventEmitter<Events> {
       cwd: this.projectRoot,
       stdio: 'pipe',
     })
-    child.stdout.on('data', chunk => chunks.push(chunk))
+    child.stdout.on('data', (chunk) => chunks.push(chunk))
     await new Promise((resolve: any, reject: any) => {
-      const withCleanup = callback => (...args: any) => {
-        child.removeListener('close', resolve)
-        child.removeListener('error', reject)
-        callback(...args)
-      }
+      const withCleanup =
+        (callback) =>
+        (...args: any) => {
+          child.removeListener('close', resolve)
+          child.removeListener('error', reject)
+          callback(...args)
+        }
       child.on('close', withCleanup(resolve))
       child.on('error', withCleanup(reject))
     })
@@ -156,15 +159,15 @@ export default class WatchingIndexer extends EventEmitter<Events> {
 
     if (this.watcher) return
     const ignorePatterns = await loadIgnorePatterns({ projectRoot })
-    ignorePatterns.forEach(file => console.error('[dwmm] ignoring:', file)) // eslint-disable-line no-console
+    ignorePatterns.forEach((file) => console.error('[dwmm] ignoring:', file)) // eslint-disable-line no-console
     const ignore = createIgnore().add(ignorePatterns)
     const globs = [
-      ...extensions.map(ext => `**/*${ext}`),
+      ...extensions.map((ext) => `**/*${ext}`),
       '**/.dude-wheres-my-module.js',
     ]
     this.watcher = chokidar.watch(globs, {
       ignored: [
-        (file: string, stats?: fs.Stats): boolean => {
+        (file: string, stats?: Stats): boolean => {
           if (!stats) return false
           const relative = path.relative(projectRoot, file)
           const result =
@@ -193,28 +196,22 @@ export default class WatchingIndexer extends EventEmitter<Events> {
       this.pendingFiles.add(file)
       if (this.gotReady) this.processFile(file)
     })
-    this.watcher.on(
-      'change',
-      async (file: string): Promise<void> => {
-        console.error('[dwmm] changed:', file) // eslint-disable-line no-console
-        file = path.resolve(projectRoot, file)
-        if (this.gotReady) this.processFile(file)
-      }
-    )
-    this.watcher.on(
-      'unlink',
-      async (file: string): Promise<void> => {
-        console.error('[dwmm] unlinked:', file) // eslint-disable-line no-console
-        file = path.resolve(projectRoot, file)
-        this.allFiles.delete(file)
-        this.deletePendingFile(file)
-        if (this.gotReady) this.index.undeclareModule(file)
-      }
-    )
-    await this.loadNatives().catch(error => console.error(error.stack)) // eslint-disable-line no-console
+    this.watcher.on('change', async (file: string): Promise<void> => {
+      console.error('[dwmm] changed:', file) // eslint-disable-line no-console
+      file = path.resolve(projectRoot, file)
+      if (this.gotReady) this.processFile(file)
+    })
+    this.watcher.on('unlink', async (file: string): Promise<void> => {
+      console.error('[dwmm] unlinked:', file) // eslint-disable-line no-console
+      file = path.resolve(projectRoot, file)
+      this.allFiles.delete(file)
+      this.deletePendingFile(file)
+      if (this.gotReady) this.index.undeclareModule(file)
+    })
+    await this.loadNatives().catch((error) => console.error(error.stack)) // eslint-disable-line no-console
   }
 
-  emitProgress = throttle(() => {
+  emitProgress: () => void = throttle(() => {
     if (!this.gotReady) return
     this.emit('progress', this.getProgress())
   }, 50)
@@ -240,6 +237,6 @@ if (!module.parent) {
         identifier,
         file: path.join(projectRoot, 'index.js'),
       })
-      .forEach(code => console.log(code)) // eslint-disable-line no-console
+      .forEach((code) => console.log(code)) // eslint-disable-line no-console
   })
 }

@@ -8,10 +8,10 @@ import { expect } from 'chai'
 import { describe, it } from 'mocha'
 import fs from 'fs-extra'
 
-describe('SuggestedImportIndex', function() {
+describe('SuggestedImportIndex', function () {
   this.timeout(30000)
-  describe(`declareModule`, function() {
-    it(`basic test`, async function(): Promise<void> {
+  describe(`declareModule`, function () {
+    it(`basic test`, async function (): Promise<void> {
       const projectRoot = path.resolve(__dirname, '..', '..')
       const parser = new FlowParser()
       const index = new SuggestedImportIndex({
@@ -43,8 +43,7 @@ describe('SuggestedImportIndex', function() {
         })
       ).to.containSubset([
         {
-          code:
-            'import { SuggestedImportSource } from "../SuggestedImportIndex"',
+          code: 'import { SuggestedImportSource } from "../SuggestedImportIndex"',
         },
       ])
 
@@ -71,7 +70,7 @@ describe('SuggestedImportIndex', function() {
         },
       ])
     })
-    it(`tolerates nonexistent imports`, async function(): Promise<void> {
+    it(`tolerates nonexistent imports`, async function (): Promise<void> {
       const projectRoot = path.resolve(__dirname, '..', '..')
       const parser = new FlowParser()
       const index = new SuggestedImportIndex({
@@ -103,7 +102,7 @@ describe('SuggestedImportIndex', function() {
       ).to.containSubset([{ code: 'import glomb from "../glomb"' }])
     })
 
-    it(`removes previous imports`, async function(): Promise<void> {
+    it(`removes previous imports`, async function (): Promise<void> {
       const projectRoot = path.resolve(__dirname, '..', '..')
       const parser = new FlowParser()
       const index = new SuggestedImportIndex({
@@ -168,7 +167,7 @@ describe('SuggestedImportIndex', function() {
         })
       ).not.to.containSubset([{ code: 'import baz from "../baz"' }])
     })
-    it(`removes previous exports`, async function(): Promise<void> {
+    it(`removes previous exports`, async function (): Promise<void> {
       const projectRoot = path.resolve(__dirname, '..', '..')
       const parser = new FlowParser()
       const index = new SuggestedImportIndex({

@@ -32,6 +32,6 @@ export async function resolveInDir(
 
   const promise = resolve(request, { basedir: root })
   asyncCache.set(cacheKey, promise)
-  promise.then(resolved => cache.set(cacheKey, resolved))
+  promise.then((resolved) => cache.set(cacheKey, resolved))
   return await promise
 }

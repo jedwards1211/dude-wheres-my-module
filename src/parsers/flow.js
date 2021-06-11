@@ -6,6 +6,7 @@ import type {
   ExportDefaultDeclaration,
   ExportAllDeclaration,
   DeclareModule,
+  Kind,
 } from '../ASTTypes'
 import { parse } from 'flow-parser'
 import type { Parser, UndefinedIdentifier } from './Parser'
@@ -164,7 +165,7 @@ export default class FlowParser implements Parser {
 
     const identifiers = root
       .find(j.Identifier)
-      .filter((path: NodePath) => {
+      .filter((path: NodePath): boolean => {
         const { node, scope, parent: parentPath } = path
         if (!scope || !parentPath) return false
         if (builtinIdentifiers.has(node.name)) return false
@@ -238,28 +239,38 @@ export default class FlowParser implements Parser {
         return node.loc && node.loc.start && node.loc.start.line != null
       })
       .paths()
-      .map((path: NodePath) => {
-        const {
-          node: {
-            name: identifier,
-            loc: { start, end },
-          },
-          parent: parentPath,
-        } = path
-        return {
-          identifier,
-          start,
-          end,
-          context: lines[start.line - 1],
-          kind:
-            parentPath &&
-            parentPath.node.type === 'GenericTypeAnnotation' &&
-            (parentPath.parent && parentPath.parent.node.type) !==
-              'TypeofTypeAnnotation'
-              ? 'type'
-              : 'value',
+      .map(
+        (
+          path: NodePath
+        ): {|
+          identifier: string,
+          start: number,
+          end: number,
+          context: string,
+          kind: Kind,
+        |} => {
+          const {
+            node: {
+              name: identifier,
+              loc: { start, end },
+            },
+            parent: parentPath,
+          } = path
+          return {
+            identifier,
+            start,
+            end,
+            context: lines[start.line - 1],
+            kind:
+              parentPath &&
+              parentPath.node.type === 'GenericTypeAnnotation' &&
+              (parentPath.parent && parentPath.parent.node.type) !==
+                'TypeofTypeAnnotation'
+                ? 'type'
+                : 'value',
+          }
         }
-      })
+      )
     const uniqIdentifiers = new Map()
     identifiers.forEach((i: UndefinedIdentifier) => {
       const { identifier, kind } = i

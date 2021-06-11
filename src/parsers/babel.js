@@ -53,7 +53,7 @@ function lookupTypeParameter(path: ?NodePath, name: string): ?NodePath {
     ) {
       const params: Array<NodePath> = (typeParameters.get('params'): any)
       return Array.isArray(params)
-        ? params.find(p => p.node.name === name)
+        ? params.find((p) => p.node.name === name)
         : null
     }
     path = path.parentPath

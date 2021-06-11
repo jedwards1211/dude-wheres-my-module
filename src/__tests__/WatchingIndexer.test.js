@@ -11,9 +11,9 @@ import SuggestedImportIndex from '../SuggestedImportIndex'
 import path from 'path'
 import WatchingIndexer from '../WatchingIndexer'
 
-describe(`WatchingIndexer`, function() {
-  describe(`loadNatives`, function() {
-    it(`loaded natives are found by SuggestedImportIndex`, async function(): Promise<void> {
+describe(`WatchingIndexer`, function () {
+  describe(`loadNatives`, function () {
+    it(`loaded natives are found by SuggestedImportIndex`, async function (): Promise<void> {
       const projectRoot = path.resolve(__dirname, '..', '..')
       const parser = new FlowParser()
       const index = new SuggestedImportIndex({

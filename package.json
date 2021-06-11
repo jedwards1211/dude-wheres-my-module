@@ -4,43 +4,33 @@
   "description": "JavaScript suggested import server",
   "main": "index.js",
   "sideEffects": false,
-  "engines": {
-    "node": ">=12.0.0"
-  },
   "scripts": {
-    "lint": "eslint src test --cache",
-    "lint:fix": "eslint --fix src test --cache",
-    "lint:watch": "esw --watch src test --cache",
-    "prettier": "prettier --write src/**/*.js test/**/*.js",
-    "prettier:check": "prettier --list-different src/**/*.js test/**/*.js",
+    "lint": "eslint $npm_package_config_eslint",
+    "lint:fix": "eslint --fix $npm_package_config_eslint",
+    "prettier": "prettier --write $npm_package_config_prettier",
+    "prettier:check": "prettier --list-different $npm_package_config_prettier",
     "flow": "flow",
     "flow:coverage": "for file in src/**.js test/**.js; do echo $file; flow coverage $file; done",
-    "flow:watch": "flow-watch -e js,js.flow,flowconfig --ignore es/ --ignore node_modules/ --watch .flowconfig --watch src/ --watch test/",
-    "clean": "rimraf $(cd src; ls) *.js.flow",
-    "build": "npm run clean && cross-env babel src --out-dir . --ignore '**/__tests__/**' && flow-copy-source -v src/ . --ignore '**/__tests__/**'",
-    "test": "cross-env NODE_ENV=production DWMM_TEST=1 mocha --exit $npm_package_config_mocha && cross-env NODE_ENV=production BABEL_ENV=coverage DWMM_TEST=1 nyc --reporter=lcov --reporter=text mocha --exit $npm_package_config_mocha",
-    "test:watch": "cross-env NODE_ENV=production BABEL_ENV=test DWMM_TEST=1 mocha --watch $npm_package_config_mocha",
-    "test:debug": "cross-env NODE_ENV=production BABEL_ENV=test DWMM_TEST=1 mocha --inspect-brk $npm_package_config_mocha",
+    "clean": "rimraf es lib $(cd src; ls) *.js.flow *.d.ts",
+    "build": "npm run clean && babel src --ignore '**/__tests__/**' --out-dir es && flow-copy-source -v src/ es && copy src/**/*.d.ts es && cross-env BABEL_ENV=es5 babel --ignore '**/__tests__/**' src --out-dir . && flow-copy-source -v src/ . && copy src/**/*.d.ts .",
+    "test": "cross-env NODE_ENV=test BABEL_ENV=es5 mocha $npm_package_config_mocha --exit && cross-env NODE_ENV=test BABEL_ENV=coverage nyc --reporter=lcov --reporter=text mocha $npm_package_config_mocha --exit",
+    "test:watch": "cross-env NODE_ENV=test BABEL_ENV=test mocha --watch $npm_package_config_mocha",
+    "test:debug": "cross-env NODE_ENV=test BABEL_ENV=test mocha --inspect-brk $npm_package_config_mocha",
     "codecov": "nyc report --reporter=text-lcov > coverage.lcov; codecov",
     "prepublishOnly": "npm run clean && npm run prettier:check && npm run lint && flow && tsc && npm test && npm run build",
     "open:coverage": "open coverage/lcov-report/index.html",
     "semantic-release": "semantic-release"
   },
-  "bin": {
-    "dwmm": "cli.js",
-    "dude": "cli.js"
-  },
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged && npm run lint && flow && tsc",
-      "commit-msg": "commitlint -e $GIT_PARAMS",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
       "pre-push": "npm test"
     }
   },
   "lint-staged": {
-    "*.{js,json,css,md}": [
-      "prettier --write",
-      "git add"
+    "*.{js,json,css,md,ts}": [
+      "prettier --write"
     ]
   },
   "commitlint": {
@@ -54,7 +44,9 @@
     "trailingComma": "es5"
   },
   "config": {
-    "mocha": "-r @babel/register test/configure.js src/__tests__/*.js src/**/__tests__/*.js",
+    "mocha": "-r @babel/register test/configure.js 'src/**/__tests__/**/*.js'",
+    "eslint": "src test --cache",
+    "prettier": "*.{json,md,js} {src,test}/**/*.{js,ts}",
     "commitizen": {
       "path": "cz-conventional-changelog"
     }
@@ -62,6 +54,9 @@
   "nyc": {
     "include": [
       "src/**/*.js"
+    ],
+    "exclude": [
+      "src/**/__tests__/**/*.js"
     ],
     "require": [
       "@babel/register"
@@ -86,58 +81,54 @@
   },
   "homepage": "https://github.com/jedwards1211/dude-wheres-my-module#readme",
   "devDependencies": {
-    "@babel/cli": "^7.1.5",
-    "@babel/core": "^7.1.6",
+    "@babel/cli": "^7.12.10",
+    "@babel/core": "^7.12.10",
+    "@babel/eslint-parser": "^7.12.13",
     "@babel/node": "^7.0.0",
-    "@babel/plugin-proposal-class-properties": "^7.1.0",
-    "@babel/plugin-proposal-export-default-from": "^7.0.0",
-    "@babel/plugin-proposal-export-namespace-from": "^7.0.0",
-    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "@babel/plugin-proposal-export-default-from": "^7.12.1",
+    "@babel/plugin-proposal-export-namespace-from": "^7.12.1",
+    "@babel/plugin-proposal-object-rest-spread": "^7.12.1",
     "@babel/plugin-proposal-optional-chaining": "^7.2.0",
-    "@babel/plugin-syntax-dynamic-import": "^7.0.0",
-    "@babel/plugin-transform-runtime": "^7.1.0",
-    "@babel/preset-env": "^7.1.6",
-    "@babel/preset-flow": "^7.0.0",
+    "@babel/plugin-syntax-dynamic-import": "^7.8.3",
+    "@babel/plugin-transform-runtime": "^7.12.10",
+    "@babel/preset-env": "^7.12.11",
+    "@babel/preset-flow": "^7.12.1",
     "@babel/preset-react": "^7.0.0",
     "@babel/preset-stage-1": "^7.0.0",
     "@babel/preset-typescript": "^7.8.3",
-    "@babel/register": "^7.0.0",
-    "@babel/runtime": "^7.1.5",
-    "@commitlint/cli": "^6.0.2",
-    "@commitlint/config-conventional": "^6.0.2",
-    "@jedwards1211/commitlint-config": "^1.0.0",
-    "@jedwards1211/eslint-config": "^2.0.0",
-    "@jedwards1211/eslint-config-flow": "^1.0.2",
+    "@babel/register": "^7.12.10",
+    "@commitlint/cli": "^11.0.0",
+    "@commitlint/config-conventional": "^11.0.0",
+    "@jedwards1211/commitlint-config": "^1.0.2",
+    "@jedwards1211/eslint-config": "^2.0.2",
+    "@jedwards1211/eslint-config-flow": "^3.0.0",
     "@types/node": "^12.12.14",
-    "babel-eslint": "^10.0.1",
-    "babel-plugin-istanbul": "^5.1.0",
+    "babel-eslint": "^10.1.0",
+    "babel-plugin-istanbul": "^6.0.0",
     "chai": "^4.2.0",
     "chai-subset": "^1.6.0",
-    "codecov": "^3.1.0",
+    "codecov": "^3.8.1",
     "copy": "^0.3.2",
-    "cross-env": "^5.2.0",
-    "eslint": "^5.9.0",
-    "eslint-config-prettier": "^3.3.0",
-    "eslint-plugin-flowtype": "^3.2.0",
-    "eslint-watch": "^4.0.2",
-    "flow-bin": "0.104.0",
-    "flow-copy-source": "^2.0.2",
-    "flow-watch": "^1.1.4",
-    "husky": "^1.1.4",
-    "istanbul": "^0.4.5",
-    "lint-staged": "^8.0.4",
-    "mocha": "^5.2.0",
-    "nyc": "^13.1.0",
-    "prettier": "^1.15.2",
-    "prettier-eslint": "^8.8.2",
+    "cross-env": "^7.0.3",
+    "eslint": "^7.18.0",
+    "eslint-config-prettier": "^7.2.0",
+    "eslint-plugin-flowtype": "^5.2.0",
+    "flow-bin": "^0.143.1",
+    "flow-copy-source": "https://github.com/jedwards1211/flow-copy-source#no-watch",
+    "husky": "^4.3.8",
+    "lint-staged": "^10.5.3",
+    "mocha": "^8.2.1",
+    "nyc": "^15.1.0",
+    "prettier": "^2.2.1",
+    "prettier-eslint": "^12.0.0",
     "recast": "^0.16.1",
-    "rimraf": "^2.6.0",
-    "semantic-release": "^15.13.24",
-    "typescript": "^3.7.2"
+    "rimraf": "^3.0.2",
+    "semantic-release": "^17.3.7",
+    "typescript": "^4.1.3"
   },
   "dependencies": {
-    "@babel/polyfill": "^7.0.0",
-    "@babel/runtime": "^7.1.5",
+    "@babel/runtime": "^7.12.5",
     "@jcoreio/poll": "^2.0.0",
     "@jcoreio/typed-event-emitter": "^1.0.0",
     "JSONStream": "^1.3.5",
@@ -145,7 +136,7 @@
     "ast-types": "^0.11.7",
     "babel-parse-wild-code": "^1.0.0",
     "chalk": "^2.4.1",
-    "chokidar": "^2.0.4",
+    "chokidar": "^3.5.0",
     "delay": "^4.1.0",
     "flow-parser": "^0.86.0",
     "fs-extra": "^7.0.1",
@@ -156,27 +147,17 @@
     "lockfile": "^1.0.4",
     "lodash": "^4.17.11",
     "p-event": "^4.1.0",
+    "regenerator-runtime": "^0.13.7",
     "resolve": "^1.15.0",
     "semver": "^6.3.0",
     "touch": "^3.1.0",
     "yargs": "^14.0.0"
   },
-  "renovate": {
-    "extends": [
-      ":separateMajorReleases",
-      ":combinePatchMinorReleases",
-      ":ignoreUnstable",
-      ":prImmediately",
-      ":renovatePrefix",
-      ":updateNotScheduled",
-      ":preserveSemverRanges",
-      ":semanticPrefixFixDepsChoreOthers",
-      ":automergeDisabled",
-      "group:monorepos"
-    ],
-    "automerge": true,
-    "major": {
-      "automerge": false
-    }
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "bin": {
+    "dwmm": "cli.js",
+    "dude": "cli.js"
   }
 }

@@ -292,9 +292,9 @@ module.exports = async function configure() {
   const nodeModulesDir = path.join(__dirname, 'node_modules')
 
   function assumeDefaultImports(files, options = {}) {
-    const transformIdentifier = options.transformIdentifier || (id => id)
+    const transformIdentifier = options.transformIdentifier || ((id) => id)
     const result = []
-    files.forEach(file => {
+    files.forEach((file) => {
       if (/index\.js$/.test(file)) file = path.dirname(file)
       file = file.replace(/\.js$/, '')
       const identifier = path.basename(file)
@@ -310,7 +310,7 @@ module.exports = async function configure() {
 
   function assumeNamedImports(files) {
     const result = []
-    files.forEach(file => {
+    files.forEach((file) => {
       if (/index\.js$/.test(file)) file = path.dirname(file)
       file = file.replace(/\.js$/, '')
       const identifier = path.basename(file)
@@ -378,7 +378,7 @@ import {expect} from 'chai'
   preferredImports.push(
     ...assumeDefaultImports(
       await glob(path.join(nodeModulesDir, '@material-ui/icons/*.js')),
-      { transformIdentifier: identifier => `${identifier}Icon` }
+      { transformIdentifier: (identifier) => `${identifier}Icon` }
     )
   )
   preferredImports.push(

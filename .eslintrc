@@ -3,15 +3,12 @@
     "@jedwards1211/eslint-config",
     "@jedwards1211/eslint-config-flow",
     "prettier",
+    "prettier/babel",
     "prettier/flowtype"
   ],
-  "parser": "babel-eslint",
-  "parserOptions": {
-    "ecmaVersion": 6,
-    "sourceType": "module"
-  },
+  "parser": "@babel/eslint-parser",
   "env": {
-    "es6": true,
+    "es2017": true,
     "node": true
   }
 }

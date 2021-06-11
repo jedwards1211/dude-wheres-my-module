@@ -45,14 +45,14 @@ export default function getSuggestedImports({
         kind,
         mode: parser.getMode({ code, file }),
       })
-      .map(suggested => ({
+      .map((suggested) => ({
         ...suggested,
         ast: suggested.code.startsWith('import')
           ? parser.importDeclaration(suggested.code)
           : parser.requireDeclaration(suggested.code),
       }))
     if (result[identifier]) {
-      suggested.forEach(s => result[identifier].suggested.push(s))
+      suggested.forEach((s) => result[identifier].suggested.push(s))
     } else {
       result[identifier] = {
         ...undefinedIdentifier,

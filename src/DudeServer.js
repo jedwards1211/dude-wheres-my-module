@@ -1,7 +1,8 @@
 // @flow
 
 import './checkNodeVersion'
-import '@babel/polyfill'
+import 'core-js/stable'
+import 'regenerator-runtime/runtime'
 import SuggestedImportIndex from './SuggestedImportIndex'
 import WatchingIndexer from './WatchingIndexer'
 import FlowParser from './parsers/flow'
@@ -74,8 +75,8 @@ stderr.pipe(logFile)
 
 console.error('[dwmm]', 'starting', { projectRoot, files })
 
-process.on('uncaughtException', err => console.error(err.stack))
-process.on('unhandledRejection', reason =>
+process.on('uncaughtException', (err) => console.error(err.stack))
+process.on('unhandledRejection', (reason) =>
   console.error((reason && reason.stack) || String(reason))
 )
 
@@ -109,7 +110,7 @@ const server = net
   .createServer()
   .listen(files.sock, () => console.error('[dwmm] listening on', files.sock)) // eslint-disable-line no-console
 
-const logError = error => console.error(error.stack) // eslint-disable-line no-console
+const logError = (error) => console.error(error.stack) // eslint-disable-line no-console
 
 indexer.start()
 indexer.on('error', logError)
@@ -128,7 +129,9 @@ async function cleanup(): Promise<void> {
     ...(process.platform === 'win32' ? [] : [files.sock]),
   ]
   console.error('[dwmm]', 'removing', ...filesToRemove)
-  await Promise.all(filesToRemove.map(file => fs.remove(file).catch(logError)))
+  await Promise.all(
+    filesToRemove.map((file) => fs.remove(file).catch(logError))
+  )
 }
 
 function signalNumber(signal: string): number {
@@ -167,9 +170,9 @@ server.on('connection', (sock: net.Socket) => {
     const { seq, waitUntilReady, suggest, wheres, stop, kill } = message
     if (stop) {
       console.error('[dwmm]', 'got stop request')
-      for (const sock of sockets) await promisify(cb => sock.end(cb))
+      for (const sock of sockets) await promisify((cb) => sock.end(cb))
       sockets.clear()
-      await promisify(cb => server.close(cb))
+      await promisify((cb) => server.close(cb))
       await cleanup()
       process.exit(0)
     }
@@ -177,7 +180,7 @@ server.on('connection', (sock: net.Socket) => {
       console.error('[dwmm]', 'got kill request')
       for (const sock of sockets) sock.destroy()
       sockets.clear()
-      await promisify(cb => server.close(cb))
+      await promisify((cb) => server.close(cb))
       await cleanup()
       process.exit(EXIT_CODE_KILLED_BY_CLIENT)
     }

@@ -20,7 +20,7 @@ import type {
 import extensions from './extensions'
 import _resolve from 'resolve'
 import identifierFromFilename from './util/identifierFromFilename'
-import lazy from './util/lazy'
+import lazy, { type LazyFn } from './util/lazy'
 import some from './util/some'
 import sortBy from 'lodash/sortBy'
 import { promisify } from 'util'
@@ -155,7 +155,7 @@ class SuggestedImport {
     return this.sources.size
   }
 
-  _getKind = lazy(
+  _getKind: LazyFn<'value' | 'type' | 'both'> = lazy(
     (): 'value' | 'type' | 'both' => {
       const hasValue = some(
         this.sources.values(),
@@ -173,7 +173,7 @@ class SuggestedImport {
     return this._getKind()
   }
 
-  _getIsPreferred = lazy(() =>
+  _getIsPreferred: LazyFn<boolean> = lazy(() =>
     some(this.sources.values(), ({ importFoundIn }) =>
       importFoundIn ? isConfigFile(importFoundIn) : false
     )
@@ -313,12 +313,12 @@ export default class SuggestedImportIndex {
           isNodeModules: from.startsWith(this.nodeModulesDir),
         })),
       [
-        s => (s.isPreferred ? -1 : 1),
-        s => (!s.isNative && !s.isNodeModules ? s.from.length : Infinity),
-        s => (!s.isNodeModules ? -1 : 1),
-        s => (!s.isNative ? -1 : 1),
-        s => -s.numSources,
-        s => s.from,
+        (s) => (s.isPreferred ? -1 : 1),
+        (s) => (!s.isNative && !s.isNodeModules ? s.from.length : Infinity),
+        (s) => (!s.isNodeModules ? -1 : 1),
+        (s) => (!s.isNative ? -1 : 1),
+        (s) => -s.numSources,
+        (s) => s.from,
       ]
     ).map(
       ({

@@ -3,9 +3,7 @@
 import path from 'path'
 import os from 'os'
 
-export default function tempFiles(
-  projectRoot: string
-): {
+export default function tempFiles(projectRoot: string): {
   dir: string,
   lock: string,
   sock: string,
