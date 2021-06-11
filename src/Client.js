@@ -2,7 +2,6 @@
 
 import type { Progress } from './WatchingIndexer'
 import net from 'net'
-import Path from 'path'
 import tempFiles from './tempFiles'
 import { spawn } from 'child_process'
 import { promisify } from 'util'
@@ -68,9 +67,7 @@ export default class Client extends EventEmitter<Events> {
     } catch (error) {
       // seems like no server is running, spawn a new server
       this.emit('starting')
-      let command = process.env.DWMM_TEST
-        ? Path.resolve(__dirname, '..', 'node_modules', '.bin', 'babel-node')
-        : process.execPath
+      let command = process.env.DWMM_TEST ? 'babel-node' : process.execPath
       if (!/node$/.test(command)) command = 'node'
       const args = [require.resolve('./DudeServer'), this.projectRoot]
       const server = spawn(command, args, {

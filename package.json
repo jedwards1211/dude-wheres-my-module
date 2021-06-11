@@ -13,7 +13,7 @@
     "flow:coverage": "for file in src/**.js test/**.js; do echo $file; flow coverage $file; done",
     "clean": "rimraf es lib $(cd src; ls) *.js.flow *.d.ts",
     "build": "npm run clean && babel src --ignore '**/__tests__/**' --out-dir es && flow-copy-source -v src/ es && copy src/**/*.d.ts es && cross-env BABEL_ENV=es5 babel --ignore '**/__tests__/**' src --out-dir . && flow-copy-source -v src/ . && copy src/**/*.d.ts .",
-    "test": "cross-env NODE_ENV=test BABEL_ENV=es5 mocha $npm_package_config_mocha --exit && cross-env NODE_ENV=test BABEL_ENV=coverage nyc --reporter=lcov --reporter=text mocha $npm_package_config_mocha --exit",
+    "test": "cross-env DWMM_TEST=1 NODE_ENV=test BABEL_ENV=es5 mocha $npm_package_config_mocha --exit && cross-env DWMM_TEST=1 NODE_ENV=test BABEL_ENV=coverage nyc --reporter=lcov --reporter=text mocha $npm_package_config_mocha --exit",
     "test:watch": "cross-env NODE_ENV=test BABEL_ENV=test mocha --watch $npm_package_config_mocha",
     "test:debug": "cross-env NODE_ENV=test BABEL_ENV=test mocha --inspect-brk $npm_package_config_mocha",
     "codecov": "nyc report --reporter=text-lcov > coverage.lcov; codecov",
