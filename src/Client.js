@@ -35,7 +35,7 @@ type Events = {
 
 async function connected(socket: net.Socket): Promise<void> {
   await emitted(socket, 'connect', {
-    rejectionEvents: ['error', 'exit'],
+    rejectionEvents: ['error', 'exit', 'close'],
     timeout: 10000,
   })
 }
@@ -62,7 +62,10 @@ export default class Client extends EventEmitter<Events> {
     let client: net.Socket
     try {
       // in case a server is already running, try to connect to the socket
-      client = net.createConnection(files.sock)
+      client = net.createConnection({
+        path: files.sock,
+        allowHalfOpen: process.platform === 'win32',
+      })
       await connected(client)
     } catch (error) {
       // seems like no server is running, spawn a new server

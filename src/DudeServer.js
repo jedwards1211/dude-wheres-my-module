@@ -107,7 +107,7 @@ const indexer = new WatchingIndexer({
 })
 
 const server = net
-  .createServer()
+  .createServer({ allowHalfOpen: process.platform === 'win32' })
   .listen(files.sock, () => console.error('[dwmm] listening on', files.sock)) // eslint-disable-line no-console
 
 const logError = (error) => console.error(error.stack) // eslint-disable-line no-console
