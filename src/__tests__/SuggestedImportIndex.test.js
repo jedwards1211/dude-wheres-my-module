@@ -70,6 +70,39 @@ describe('SuggestedImportIndex', function () {
         },
       ])
     })
+    it(`bugs -- spBv1.0.js extension`, async function () {
+      const projectRoot = path.resolve(__dirname, '..', '..')
+      const parser = new FlowParser()
+      const index = new SuggestedImportIndex({
+        projectRoot,
+      })
+
+      await index.declareModule(
+        path.join(
+          __dirname,
+          '..',
+          '..',
+          'node_modules',
+          '@jcoreio',
+          'sparkplug-payload',
+          'spBv1.0.js'
+        ),
+        parser.parse({
+          code: `export function encodePayload() { }`,
+        })
+      )
+
+      expect(
+        index.suggest({
+          identifier: 'encodePayload',
+          file: __filename,
+        })
+      ).to.containSubset([
+        {
+          code: 'import { encodePayload } from "@jcoreio/sparkplug-payload/spBv1.0"',
+        },
+      ])
+    })
     it(`tolerates nonexistent imports`, async function (): Promise<void> {
       const projectRoot = path.resolve(__dirname, '..', '..')
       const parser = new FlowParser()

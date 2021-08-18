@@ -267,7 +267,7 @@ export default class SuggestedImportIndex {
   }
 
   _resolveFrom(importingFile: ?string, from: string): string {
-    let result = from.replace(/(\/index)?\.[^/]+$/, '')
+    let result = from.replace(/(\/index)?\.(jsx?|tsx?)$/, '')
     if (result.startsWith(this.nodeModulesDir)) {
       result = path.relative(this.nodeModulesDir, result)
       const match = /^(@[^/]+\/)?[^/]+/.exec(result)
