@@ -140,7 +140,7 @@
     "core-js": "^3.14.0",
     "delay": "^4.1.0",
     "flow-parser": "^0.86.0",
-    "fs-extra": "^7.0.1",
+    "fs-extra": "^8.0.0",
     "glob": "^7.1.6",
     "glob-gitignore": "^1.0.11",
     "ignore": "^5.1.8",
